@@ -65,7 +65,8 @@ export class OtpService {
       cooldownSeconds: env.OTP_RESEND_COOLDOWN_SECONDS,
       resendAvailableAt: challenge.resendAvailableAt,
       expiresAt: challenge.expiresAt,
-      maskedDestination: this.maskDestination(destination)
+      maskedDestination: this.maskDestination(destination),
+      ...(env.USE_SAMPLE_OTP && env.NODE_ENV !== 'production' && { sampleOtp: env.DEV_SAMPLE_OTP })
     };
   }
 
@@ -88,7 +89,12 @@ export class OtpService {
       throw new BadRequestError('Invalid or expired verification code', 'INVALID_OTP');
     }
 
-    if (challenge.purpose !== expectedPurpose) {
+    const isPurposeCompatible =
+      challenge.purpose === expectedPurpose ||
+      expectedPurpose === OtpPurpose.AUTHENTICATION ||
+      challenge.purpose === OtpPurpose.AUTHENTICATION;
+
+    if (!isPurposeCompatible) {
       throw new BadRequestError('Verification purpose mismatch', 'PURPOSE_MISMATCH');
     }
 

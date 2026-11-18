@@ -3,6 +3,42 @@ import { authService } from './auth.service';
 import { createSuccessResponse } from '../../common/types/api-response';
 
 export class AuthController {
+  async sendOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { mobileNumber, countryCode } = req.body;
+      const result = await authService.sendOtp(mobileNumber, countryCode);
+      res.status(200).json(
+        createSuccessResponse(result, 'Verification code sent successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async verifyOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { challengeId, otp, deviceId, deviceName, platform } = req.body;
+      const deviceInfo = {
+        deviceId,
+        deviceName,
+        platform,
+        ipAddress: req.ip || req.socket.remoteAddress,
+        userAgent: req.headers['user-agent']
+      };
+
+      const result = await authService.verifyOtp(challengeId, otp, deviceInfo);
+      const message = result.isNewUser
+        ? 'Account registered and authenticated successfully'
+        : 'Authenticated successfully';
+
+      res.status(result.isNewUser ? 201 : 200).json(
+        createSuccessResponse(result, message, req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async initiateSignup(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { mobileNumber, countryCode } = req.body;

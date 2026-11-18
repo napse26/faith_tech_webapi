@@ -11,6 +11,146 @@ import { TokenPair } from '../sessions/session.types';
 
 export class AuthService {
   /**
+   * Unified Send OTP flow: dispatches OTP challenge for login or signup.
+   * In development mode, includes sampleOtp: '123456'.
+   */
+  async sendOtp(
+    mobileNumber: string,
+    countryCallingCode = '+91'
+  ): Promise<OtpInitiateResult & { isExistingUser: boolean }> {
+    const normalized = normalizePhoneNumber(mobileNumber, countryCallingCode);
+
+    const existingUser = await prisma.user.findUnique({
+      where: { mobileNumber: normalized.e164 }
+    });
+
+    const result = await otpService.initiateChallenge(
+      normalized.e164,
+      OtpPurpose.AUTHENTICATION,
+      existingUser?.id
+    );
+
+    return {
+      ...result,
+      isExistingUser: !!existingUser
+    };
+  }
+
+  /**
+   * Unified Verify OTP flow:
+   * - If user already exists: verifies OTP, checks account status, reactivates if needed, issues session & tokens (isNewUser: false).
+   * - If user does not exist: creates new user & profile, issues session & tokens (isNewUser: true).
+   */
+  async verifyOtp(
+    challengeId: string,
+    otp: string,
+    deviceInfo: DeviceInfo
+  ): Promise<AuthSuccessDto> {
+    return prisma.$transaction(async (tx) => {
+      const verification = await otpService.verifyChallenge(
+        challengeId,
+        otp,
+        OtpPurpose.AUTHENTICATION,
+        tx
+      );
+
+      let user = await tx.user.findUnique({
+        where: { mobileNumber: verification.destination },
+        include: { profile: true }
+      });
+
+      let isNewUser = false;
+
+      if (!user) {
+        // User does not exist: create new user and profile
+        isNewUser = true;
+        user = await tx.user.create({
+          data: {
+            mobileNumber: verification.destination,
+            isMobileVerified: true,
+            status: UserStatus.ACTIVE,
+            profile: {
+              create: {
+                isProfileComplete: false
+              }
+            }
+          },
+          include: { profile: true }
+        });
+
+        await auditService.log(
+          {
+            userId: user.id,
+            action: 'AUTH_SIGNUP_SUCCESS',
+            resource: 'USER',
+            ipAddress: deviceInfo.ipAddress,
+            userAgent: deviceInfo.userAgent,
+            metadata: { mobileNumber: user.mobileNumber, flow: 'UNIFIED_OTP' }
+          },
+          tx
+        );
+      } else {
+        // Existing user: check status and reactivate if required
+        if (user.status === UserStatus.BLOCKED) {
+          throw new ForbiddenError('Account is suspended or blocked', 'ACCOUNT_BLOCKED');
+        }
+
+        if (user.status === UserStatus.DEACTIVATED || user.status === UserStatus.DELETION_PENDING) {
+          user = await tx.user.update({
+            where: { id: user.id },
+            data: { status: UserStatus.ACTIVE },
+            include: { profile: true }
+          });
+
+          await tx.accountDeletionRequest.updateMany({
+            where: { userId: user.id, status: 'PENDING' },
+            data: { status: 'CANCELLED' }
+          });
+        }
+
+        await auditService.log(
+          {
+            userId: user.id,
+            action: 'AUTH_LOGIN_SUCCESS',
+            resource: 'USER',
+            ipAddress: deviceInfo.ipAddress,
+            userAgent: deviceInfo.userAgent,
+            metadata: { mobileNumber: user.mobileNumber, flow: 'UNIFIED_OTP' }
+          },
+          tx
+        );
+      }
+
+      // Create session and issue token pair
+      const tokens = await sessionService.issueTokenPair(
+        {
+          userId: user.id,
+          deviceId: deviceInfo.deviceId,
+          deviceName: deviceInfo.deviceName,
+          platform: deviceInfo.platform,
+          ipAddress: deviceInfo.ipAddress,
+          userAgent: deviceInfo.userAgent
+        },
+        undefined,
+        tx
+      );
+
+      const userSummary: UserSummaryDto = {
+        id: user.id,
+        mobileNumber: user.mobileNumber,
+        countryCode: user.countryCode,
+        email: user.email,
+        status: user.status,
+        isMobileVerified: user.isMobileVerified,
+        isEmailVerified: user.isEmailVerified,
+        isProfileComplete: user.profile?.isProfileComplete ?? false
+      };
+
+      return { user: userSummary, tokens, isNewUser };
+    });
+  }
+
+  /**
    * Initiates the signup OTP verification flow.
    */
   async initiateSignup(

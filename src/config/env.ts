@@ -20,6 +20,12 @@ const envSchema = z.object({
   OTP_MAX_ATTEMPTS: z.string().transform(Number).default('5'),
   OTP_RESEND_COOLDOWN_SECONDS: z.string().transform(Number).default('60'),
   OTP_HMAC_SECRET: z.string().min(32, 'OTP_HMAC_SECRET must be at least 32 characters'),
+  DEV_SAMPLE_OTP: z.string().default('123456'),
+  USE_SAMPLE_OTP: z
+    .string()
+    .optional()
+    .transform((v) => (v !== undefined ? v === 'true' || v === '1' : true))
+    .default('true'),
 
   SMS_PROVIDER: z.enum(['mock', 'twilio', 'gupshup']).default('mock'),
   SMS_API_KEY: z.string().optional().default(''),

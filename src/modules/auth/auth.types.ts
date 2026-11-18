@@ -15,6 +15,7 @@ export interface UserSummaryDto {
 export interface AuthSuccessDto {
   user: UserSummaryDto;
   tokens: TokenPair;
+  isNewUser?: boolean;
 }
 
 export interface DeviceInfo {

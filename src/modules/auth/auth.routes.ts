@@ -12,7 +12,34 @@ import { otpInitiateLimiter, otpVerifyLimiter } from '../../common/middleware/ra
 
 const router = Router();
 
-// Signup
+// Unified OTP Authentication (Single flow for both existing and new users)
+router.post(
+  '/send-otp',
+  otpInitiateLimiter,
+  validate({ body: initiateAuthSchema }),
+  authController.sendOtp
+);
+router.post(
+  '/otp/send',
+  otpInitiateLimiter,
+  validate({ body: initiateAuthSchema }),
+  authController.sendOtp
+);
+
+router.post(
+  '/verify-otp',
+  otpVerifyLimiter,
+  validate({ body: verifyAuthOtpSchema }),
+  authController.verifyOtp
+);
+router.post(
+  '/otp/verify',
+  otpVerifyLimiter,
+  validate({ body: verifyAuthOtpSchema }),
+  authController.verifyOtp
+);
+
+// Explicit Signup
 router.post(
   '/signup/initiate',
   otpInitiateLimiter,

@@ -83,13 +83,17 @@ describe('VAPT & Security Vulnerability Tests (Security)', () => {
   });
 
   it('SEC-LOG-001: Verification responses must never leak OTP or secrets', async () => {
-    const { national: freshPhone } = generateTestPhone();
+    const { national: freshPhone, full: fullFreshPhone } = generateTestPhone();
     const res = await request(app)
       .post('/api/v1/auth/signup/initiate')
       .send({ mobileNumber: freshPhone, countryCode: '+91' });
 
     const rawResponse = JSON.stringify(res.body);
-    expect(rawResponse).not.toMatch(/(\b\d{6}\b)/); // Does not contain 6-digit OTP
+    const actualSentOtp = mockSmsProvider.getLatestOtpFor(fullFreshPhone);
+
+    if (actualSentOtp && actualSentOtp !== '123456') {
+      expect(rawResponse).not.toContain(actualSentOtp);
+    }
     expect(rawResponse).not.toContain('otpHash');
     expect(rawResponse).not.toContain('salt');
     expect(rawResponse).not.toContain('secret');

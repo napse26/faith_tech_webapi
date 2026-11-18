@@ -103,6 +103,46 @@
     }
   },
   "paths": {
+    "/api/v1/auth/send-otp": {
+      "post": {
+        "summary": "Unified OTP dispatch for mobile login/signup",
+        "description": "User enters mobile number and submits. Dispatches OTP via SMS adapter. In development mode, returns sampleOtp: '123456'.",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/InitiateAuthRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OTP challenge created and dispatched" },
+          "400": { "description": "Invalid mobile number format" },
+          "429": { "description": "Rate limit exceeded" }
+        }
+      }
+    },
+    "/api/v1/auth/verify-otp": {
+      "post": {
+        "summary": "Unified OTP verification for mobile login/signup",
+        "description": "Verifies OTP (accepts development sample OTP '123456'). If user already exists, verifies OTP and issues tokens (isNewUser: false). If user does not exist, registers new user and issues tokens (isNewUser: true).",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VerifyAuthOtpRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Existing user authenticated successfully (isNewUser: false)" },
+          "201": { "description": "New user registered and authenticated successfully (isNewUser: true)" },
+          "400": { "description": "Invalid or expired OTP" }
+        }
+      }
+    },
     "/api/v1/auth/signup/initiate": {
       "post": {
         "summary": "Initiate mobile signup OTP flow",

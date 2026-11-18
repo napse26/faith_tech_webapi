@@ -26,8 +26,13 @@ export function hashOtp(otp: string, salt: string): string {
 
 /**
  * Verifies an OTP against a stored HMAC digest in constant time to prevent timing attacks.
+ * In non-production environments with USE_SAMPLE_OTP enabled, also accepts DEV_SAMPLE_OTP.
  */
 export function verifyOtpHash(otp: string, salt: string, storedHash: string): boolean {
+  if (env.USE_SAMPLE_OTP && env.NODE_ENV !== 'production' && otp === env.DEV_SAMPLE_OTP) {
+    return true;
+  }
+
   const computedHash = hashOtp(otp, salt);
   const computedBuffer = Buffer.from(computedHash, 'hex');
   const storedBuffer = Buffer.from(storedHash, 'hex');

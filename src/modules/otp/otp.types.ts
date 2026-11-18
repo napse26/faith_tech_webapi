@@ -12,6 +12,8 @@ export interface OtpInitiateResult {
   resendAvailableAt: Date;
   expiresAt: Date;
   maskedDestination: string;
+  isExistingUser?: boolean;
+  sampleOtp?: string;
 }
 
 export interface VerifyOtpResult {
