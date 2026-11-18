@@ -1,0 +1,366 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "FaithTech Astrology Mobile App Backend API",
+    "version": "1.0.0",
+    "description": "Production-ready, enterprise-grade REST API backend for Astrology Mobile Application. Includes OTP authentication, JWT session lifecycle, user profile management, and astrology birth details."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "data": { "type": "object", "nullable": true },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": { "type": "string" },
+                "field": { "type": "string" },
+                "message": { "type": "string" }
+              }
+            }
+          },
+          "traceId": { "type": "string" }
+        }
+      },
+      "InitiateAuthRequest": {
+        "type": "object",
+        "required": ["mobileNumber"],
+        "properties": {
+          "mobileNumber": { "type": "string", "example": "9876543210" },
+          "countryCode": { "type": "string", "example": "+91", "default": "+91" }
+        }
+      },
+      "VerifyAuthOtpRequest": {
+        "type": "object",
+        "required": ["challengeId", "otp"],
+        "properties": {
+          "challengeId": { "type": "string", "format": "uuid" },
+          "otp": { "type": "string", "example": "748291" },
+          "deviceId": { "type": "string" },
+          "deviceName": { "type": "string" },
+          "platform": { "type": "string", "enum": ["ANDROID", "IOS", "WEB", "UNKNOWN"] }
+        }
+      },
+      "ResendOtpRequest": {
+        "type": "object",
+        "required": ["challengeId"],
+        "properties": {
+          "challengeId": { "type": "string", "format": "uuid" }
+        }
+      },
+      "RefreshTokenRequest": {
+        "type": "object",
+        "required": ["refreshToken"],
+        "properties": {
+          "refreshToken": { "type": "string" }
+        }
+      },
+      "UpdateProfileRequest": {
+        "type": "object",
+        "properties": {
+          "fullName": { "type": "string", "example": "Aarav Sharma" },
+          "displayName": { "type": "string", "example": "Aarav" },
+          "gender": { "type": "string", "enum": ["MALE", "FEMALE", "NON_BINARY", "OTHER", "PREFER_NOT_TO_SAY"] },
+          "avatarUrl": { "type": "string", "format": "uri" },
+          "preferredLanguage": { "type": "string", "example": "en" },
+          "country": { "type": "string", "example": "India" },
+          "state": { "type": "string", "example": "Maharashtra" },
+          "city": { "type": "string", "example": "Mumbai" },
+          "timezone": { "type": "string", "example": "Asia/Kolkata" }
+        }
+      },
+      "UpsertBirthDetailsRequest": {
+        "type": "object",
+        "required": ["birthDate", "timeAccuracy", "birthPlaceName", "latitude", "longitude", "timezone"],
+        "properties": {
+          "birthDate": { "type": "string", "example": "1995-08-15" },
+          "birthTime": { "type": "string", "example": "14:30:00", "nullable": true },
+          "timeAccuracy": { "type": "string", "enum": ["EXACT", "APPROXIMATE", "UNKNOWN"] },
+          "birthPlaceName": { "type": "string", "example": "Mumbai, India" },
+          "latitude": { "type": "number", "example": 19.076 },
+          "longitude": { "type": "number", "example": 72.8777 },
+          "timezone": { "type": "string", "example": "Asia/Kolkata" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/auth/signup/initiate": {
+      "post": {
+        "summary": "Initiate mobile signup OTP flow",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/InitiateAuthRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Verification code dispatched" },
+          "400": { "description": "Invalid input" },
+          "429": { "description": "Rate limit exceeded" }
+        }
+      }
+    },
+    "/api/v1/auth/signup/verify-otp": {
+      "post": {
+        "summary": "Verify signup OTP and create account",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VerifyAuthOtpRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Account created and authenticated" },
+          "400": { "description": "Invalid or expired OTP" }
+        }
+      }
+    },
+    "/api/v1/auth/login/initiate": {
+      "post": {
+        "summary": "Initiate mobile login OTP flow",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/InitiateAuthRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login OTP dispatched" },
+          "400": { "description": "Invalid input" },
+          "429": { "description": "Rate limit exceeded" }
+        }
+      }
+    },
+    "/api/v1/auth/login/verify-otp": {
+      "post": {
+        "summary": "Verify login OTP and establish session",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VerifyAuthOtpRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Authenticated successfully" },
+          "400": { "description": "Invalid or expired OTP" }
+        }
+      }
+    },
+    "/api/v1/auth/otp/resend": {
+      "post": {
+        "summary": "Resend OTP challenge subject to cooldown",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ResendOtpRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OTP resent" },
+          "400": { "description": "Cooldown active or limit exceeded" }
+        }
+      }
+    },
+    "/api/v1/auth/token/refresh": {
+      "post": {
+        "summary": "Rotate refresh token and issue new access token",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RefreshTokenRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Token rotated successfully" },
+          "401": { "description": "Invalid, expired, or compromised token" }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "summary": "Logout current session",
+        "tags": ["Authentication"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Logged out successfully" }
+        }
+      }
+    },
+    "/api/v1/auth/logout-all": {
+      "post": {
+        "summary": "Revoke all active sessions on all devices",
+        "tags": ["Authentication"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "All sessions revoked" }
+        }
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "summary": "Get authenticated user profile",
+        "tags": ["User Profile"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Profile retrieved" },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "put": {
+        "summary": "Update user profile fields",
+        "tags": ["User Profile"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateProfileRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Profile updated" }
+        }
+      },
+      "patch": {
+        "summary": "Partially update user profile fields",
+        "tags": ["User Profile"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateProfileRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Profile updated" }
+        }
+      }
+    },
+    "/api/v1/users/me/birth-details": {
+      "get": {
+        "summary": "Get authenticated user astrology birth details",
+        "tags": ["Birth Details"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Birth details retrieved" },
+          "404": { "description": "Birth details not set" }
+        }
+      },
+      "put": {
+        "summary": "Create or update astrology birth details",
+        "tags": ["Birth Details"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpsertBirthDetailsRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Birth details saved" }
+        }
+      }
+    },
+    "/api/v1/users/me/mobile/change/initiate": {
+      "post": {
+        "summary": "Initiate mobile number change OTP",
+        "tags": ["User Lifecycle"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "OTP sent to new mobile number" }
+        }
+      }
+    },
+    "/api/v1/users/me/mobile/change/confirm": {
+      "post": {
+        "summary": "Confirm mobile number change with OTP",
+        "tags": ["User Lifecycle"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Mobile number updated" }
+        }
+      }
+    },
+    "/api/v1/users/me/deactivate": {
+      "post": {
+        "summary": "Deactivate account and revoke all sessions",
+        "tags": ["User Lifecycle"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Account deactivated" }
+        }
+      }
+    },
+    "/api/v1/users/me/deletion-requests": {
+      "post": {
+        "summary": "Submit account deletion request with 30-day grace period",
+        "tags": ["User Lifecycle"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Deletion scheduled" }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Liveness health check",
+        "tags": ["System"],
+        "responses": {
+          "200": { "description": "Service is healthy" }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "summary": "Readiness probe including database connectivity",
+        "tags": ["System"],
+        "responses": {
+          "200": { "description": "Service and DB ready" },
+          "503": { "description": "Database not reachable" }
+        }
+      }
+    }
+  }
+}

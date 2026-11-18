@@ -1,0 +1,215 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  DEACTIVATED
+  DELETION_PENDING
+  BLOCKED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum TimeAccuracy {
+  EXACT
+  APPROXIMATE
+  UNKNOWN
+}
+
+enum OtpPurpose {
+  SIGNUP
+  LOGIN
+  MOBILE_CHANGE
+  EMAIL_VERIFICATION
+}
+
+enum OtpStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+  SUPERSEDED
+  MAX_ATTEMPTS_EXCEEDED
+}
+
+enum SessionStatus {
+  ACTIVE
+  ROTATED
+  REVOKED
+  EXPIRED
+}
+
+enum DeletionStatus {
+  PENDING
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id               String      @id @default(uuid())
+  mobileNumber     String      @unique
+  countryCode      String      @default("+91")
+  email            String?     @unique
+  isMobileVerified Boolean     @default(false)
+  isEmailVerified  Boolean     @default(false)
+  status           UserStatus  @default(ACTIVE)
+  createdAt        DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime    @updatedAt @db.Timestamptz(6)
+
+  profile          UserProfile?
+  birthDetails     UserBirthDetails?
+  sessions         Session[]
+  otpChallenges    OtpChallenge[]
+  consents         UserConsent[]
+  auditLogs        AuditLog[]
+  deletionRequests AccountDeletionRequest[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id                 String    @id @default(uuid())
+  userId             String    @unique
+  fullName           String?
+  displayName        String?
+  gender             Gender?
+  avatarUrl          String?
+  preferredLanguage  String    @default("en")
+  country            String?
+  state              String?
+  city               String?
+  timezone           String    @default("Asia/Kolkata")
+  isProfileComplete  Boolean   @default(false)
+  createdAt          DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime  @updatedAt @db.Timestamptz(6)
+
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model UserBirthDetails {
+  id             String       @id @default(uuid())
+  userId         String       @unique
+  birthDate      String       // Stored as ISO YYYY-MM-DD
+  birthTime      String?      // Stored as HH:mm:ss, null if UNKNOWN
+  timeAccuracy   TimeAccuracy @default(EXACT)
+  birthPlaceName String
+  latitude       Decimal      @db.Decimal(9, 6)
+  longitude      Decimal      @db.Decimal(9, 6)
+  timezone       String       // IANA timezone identifier e.g. "Asia/Kolkata"
+  createdAt      DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(6)
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_birth_details")
+}
+
+model OtpChallenge {
+  id                String     @id @default(uuid())
+  userId            String?
+  purpose           OtpPurpose
+  destination       String     // Canonical E.164 phone number or email
+  otpHash           String     // HMAC-SHA256 digest
+  salt              String     // Per-challenge cryptographic salt
+  attemptsCount     Int        @default(0)
+  maxAttempts       Int        @default(5)
+  resendCount       Int        @default(0)
+  status            OtpStatus  @default(PENDING)
+  expiresAt         DateTime   @db.Timestamptz(6)
+  resendAvailableAt DateTime   @db.Timestamptz(6)
+  consumedAt        DateTime?  @db.Timestamptz(6)
+  createdAt         DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime   @updatedAt @db.Timestamptz(6)
+
+  user              User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([destination, purpose, status])
+  @@index([expiresAt])
+  @@map("otp_challenges")
+}
+
+model Session {
+  id               String        @id @default(uuid())
+  userId           String
+  refreshTokenHash String        @unique
+  familyId         String        @default(uuid())
+  status           SessionStatus @default(ACTIVE)
+  deviceId         String?
+  deviceName       String?
+  platform         String?       // ANDROID, IOS, WEB
+  ipAddress        String?
+  userAgent        String?
+  expiresAt        DateTime      @db.Timestamptz(6)
+  lastActivityAt   DateTime      @default(now()) @db.Timestamptz(6)
+  revokedAt        DateTime?     @db.Timestamptz(6)
+  createdAt        DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime      @updatedAt @db.Timestamptz(6)
+
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([familyId])
+  @@map("sessions")
+}
+
+model UserConsent {
+  id          String   @id @default(uuid())
+  userId      String
+  consentType String   // TERMS_OF_SERVICE, PRIVACY_POLICY, ASTROLOGY_DATA_PROCESSING
+  version     String   @default("1.0")
+  isGranted   Boolean  @default(true)
+  ipAddress   String?
+  userAgent   String?
+  grantedAt   DateTime @default(now()) @db.Timestamptz(6)
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_consents")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  resource  String
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model AccountDeletionRequest {
+  id              String         @id @default(uuid())
+  userId          String
+  status          DeletionStatus @default(PENDING)
+  reason          String?
+  scheduledPurgeAt DateTime      @db.Timestamptz(6)
+  executedAt      DateTime?      @db.Timestamptz(6)
+  createdAt       DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime       @updatedAt @db.Timestamptz(6)
+
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("account_deletion_requests")
+}
