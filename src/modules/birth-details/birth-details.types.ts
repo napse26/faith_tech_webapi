@@ -1,4 +1,4 @@
-import { TimeAccuracy } from '@prisma/client';
+export type TimeAccuracy = 'EXACT' | 'APPROXIMATE' | 'UNKNOWN';
 
 export interface UserBirthDetailsDto {
   userId: string;
@@ -9,16 +9,16 @@ export interface UserBirthDetailsDto {
   latitude: number;
   longitude: number;
   timezone: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
 }
 
 export interface UpsertBirthDetailsInput {
   birthDate: string; // YYYY-MM-DD
   birthTime?: string | null; // HH:mm:ss or HH:mm
-  timeAccuracy: TimeAccuracy;
+  timeAccuracy?: TimeAccuracy;
   birthPlaceName: string;
-  latitude: number;
-  longitude: number;
-  timezone: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
 }

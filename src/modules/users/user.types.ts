@@ -1,11 +1,12 @@
-import { DeletionStatus } from '@prisma/client';
+export type DeletionStatus = 'PENDING' | 'CANCELLED' | 'COMPLETED';
 
 export interface MobileChangeInitiateResult {
   challengeId: string;
-  cooldownSeconds: number;
-  resendAvailableAt: Date;
-  expiresAt: Date;
-  maskedDestination: string;
+  maskedPhoneNumber: string;
+  otpLength: number;
+  expiresIn: number;
+  resendAfter: number;
+  sampleOtp?: string;
 }
 
 export interface DeletionRequestDto {

@@ -33,9 +33,7 @@ export class UserController {
 
   async deactivate(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const ip = req.ip || req.socket.remoteAddress;
-      const ua = req.headers['user-agent'];
-      await userService.deactivateAccount(req.user!.id, ip, ua);
+      await userService.deactivateAccount(req.user!.id);
       res.status(200).json(
         createSuccessResponse(null, 'Account deactivated successfully. All sessions terminated.', req.traceId)
       );
@@ -47,9 +45,7 @@ export class UserController {
   async submitDeletionRequest(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { reason } = req.body;
-      const ip = req.ip || req.socket.remoteAddress;
-      const ua = req.headers['user-agent'];
-      const result = await userService.submitDeletionRequest(req.user!.id, reason, ip, ua);
+      const result = await userService.requestAccountDeletion(req.user!.id, reason);
       res.status(200).json(
         createSuccessResponse(
           result,
@@ -64,7 +60,7 @@ export class UserController {
 
   async getCurrentDeletionRequest(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const result = await userService.getCurrentDeletionRequest(req.user!.id);
+      const result = await userService.getDeletionStatus(req.user!.id);
       res.status(200).json(
         createSuccessResponse(result, 'Current deletion request retrieved successfully', req.traceId)
       );

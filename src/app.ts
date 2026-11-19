@@ -15,6 +15,11 @@ import { profileRoutes } from './modules/profiles/profile.routes';
 import { birthDetailsRoutes } from './modules/birth-details/birth-details.routes';
 import { userRoutes } from './modules/users/user.routes';
 
+// Ensure BigInt values serialize cleanly to JSON
+(BigInt.prototype as any).toJSON = function () {
+  return Number(this);
+};
+
 export function createApp(): Express {
   const app = express();
 

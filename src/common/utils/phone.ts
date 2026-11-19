@@ -37,3 +37,14 @@ export function normalizePhoneNumber(
     nationalNumber: parsed.nationalNumber
   };
 }
+
+/**
+ * Masks a phone number for privacy display (e.g. "+91******3210").
+ */
+export function maskPhoneNumber(phone: string): string {
+  if (phone.length <= 6) return phone;
+  const prefix = phone.slice(0, 3);
+  const suffix = phone.slice(-4);
+  const stars = '*'.repeat(Math.max(phone.length - 7, 4));
+  return `${prefix}${stars}${suffix}`;
+}

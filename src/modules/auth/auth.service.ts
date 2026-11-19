@@ -1,33 +1,35 @@
-import { OtpPurpose, UserStatus } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { normalizePhoneNumber } from '../../common/utils/phone';
 import { otpService } from '../otp/otp.service';
 import { sessionService } from '../sessions/session.service';
 import { auditService } from '../audit/audit.service';
-import { BadRequestError, ForbiddenError, NotFoundError } from '../../common/errors/app-error';
-import { AuthSuccessDto, DeviceInfo, UserSummaryDto } from './auth.types';
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../../common/errors/app-error';
+import { AuthSuccessData, DeviceInfo, UserSummaryDto } from './auth.types';
 import { OtpInitiateResult } from '../otp/otp.types';
+import { SessionDto } from '../sessions/session.service';
 import { TokenPair } from '../sessions/session.types';
 
 export class AuthService {
   /**
-   * Unified Send OTP flow: dispatches OTP challenge for login or signup.
-   * In development mode, includes sampleOtp: '123456'.
+   * Send OTP: supports mobile login/signup for new and existing customers.
    */
   async sendOtp(
     mobileNumber: string,
-    countryCallingCode = '+91'
+    countryCallingCode = '+91',
+    purpose = 'LOGIN',
+    channel = 'SMS',
+    ipAddress?: string
   ): Promise<OtpInitiateResult & { isExistingUser: boolean }> {
     const normalized = normalizePhoneNumber(mobileNumber, countryCallingCode);
 
-    const existingUser = await prisma.user.findUnique({
-      where: { mobileNumber: normalized.e164 }
+    const existingUser = await prisma.users.findUnique({
+      where: { mobile_no: normalized.e164 }
     });
 
     const result = await otpService.initiateChallenge(
       normalized.e164,
-      OtpPurpose.AUTHENTICATION,
-      existingUser?.id
+      purpose,
+      ipAddress
     );
 
     return {
@@ -37,394 +39,322 @@ export class AuthService {
   }
 
   /**
-   * Unified Verify OTP flow:
-   * - If user already exists: verifies OTP, checks account status, reactivates if needed, issues session & tokens (isNewUser: false).
-   * - If user does not exist: creates new user & profile, issues session & tokens (isNewUser: true).
+   * Verify OTP flow:
+   * - If user exists: validates status, updates verification, creates session & tokens (isNewUser: false).
+   * - If user does not exist: creates user, assigns CUSTOMER role, creates customer_details, creates session & tokens (isNewUser: true).
    */
   async verifyOtp(
     challengeId: string,
     otp: string,
     deviceInfo: DeviceInfo
-  ): Promise<AuthSuccessDto> {
+  ): Promise<AuthSuccessData> {
     return prisma.$transaction(async (tx) => {
       const verification = await otpService.verifyChallenge(
         challengeId,
         otp,
-        OtpPurpose.AUTHENTICATION,
+        undefined,
         tx
       );
 
-      let user = await tx.user.findUnique({
-        where: { mobileNumber: verification.destination },
-        include: { profile: true }
+      let user = await tx.users.findUnique({
+        where: { mobile_no: verification.phoneNumber },
+        include: {
+          user_roles: {
+            include: { roles: true }
+          },
+          customer_details_customer_details_user_idTousers: true
+        }
       });
 
       let isNewUser = false;
+      let primaryRole = 'CUSTOMER';
 
       if (!user) {
-        // User does not exist: create new user and profile
+        // Customer does not exist: create user record
         isNewUser = true;
-        user = await tx.user.create({
+        user = await tx.users.create({
           data: {
-            mobileNumber: verification.destination,
-            isMobileVerified: true,
-            status: UserStatus.ACTIVE,
-            profile: {
-              create: {
-                isProfileComplete: false
-              }
-            }
+            mobile_no: verification.phoneNumber,
+            country_code: verification.phoneNumber.startsWith('+91') ? '+91' : '+91',
+            is_mobile_verified: true,
+            status: 'ACTIVE',
+            is_active: true
           },
-          include: { profile: true }
+          include: {
+            user_roles: {
+              include: { roles: true }
+            },
+            customer_details_customer_details_user_idTousers: true
+          }
         });
+
+        // Assign default CUSTOMER role (role_id = 1)
+        await tx.user_roles.create({
+          data: {
+            user_id: user.user_id,
+            role_id: 1
+          }
+        });
+
+        // Create empty customer profile
+        await tx.customer_details.create({
+          data: {
+            user_id: user.user_id
+          }
+        });
+
+        primaryRole = 'CUSTOMER';
 
         await auditService.log(
           {
-            userId: user.id,
-            action: 'AUTH_SIGNUP_SUCCESS',
-            resource: 'USER',
+            userId: user.user_id,
+            phoneNumber: user.mobile_no,
+            eventType: 'LOGIN_SUCCESS',
             ipAddress: deviceInfo.ipAddress,
-            userAgent: deviceInfo.userAgent,
-            metadata: { mobileNumber: user.mobileNumber, flow: 'UNIFIED_OTP' }
+            deviceId: deviceInfo.deviceId,
+            status: 'SUCCESS'
           },
           tx
         );
       } else {
-        // Existing user: check status and reactivate if required
-        if (user.status === UserStatus.BLOCKED) {
-          throw new ForbiddenError('Account is suspended or blocked', 'ACCOUNT_BLOCKED');
+        // Existing customer: validate account status
+        const status = user.status || (user.is_active ? 'ACTIVE' : 'INACTIVE');
+
+        if (status === 'BLOCKED') {
+          throw new ForbiddenError('Account has been blocked. Please contact support.', 'ACCOUNT_BLOCKED');
         }
 
-        if (user.status === UserStatus.DEACTIVATED || user.status === UserStatus.DELETION_PENDING) {
-          user = await tx.user.update({
-            where: { id: user.id },
-            data: { status: UserStatus.ACTIVE },
-            include: { profile: true }
-          });
+        if (status === 'SUSPENDED') {
+          throw new ForbiddenError('Account is suspended. Please contact support.', 'ACCOUNT_SUSPENDED');
+        }
 
-          await tx.accountDeletionRequest.updateMany({
-            where: { userId: user.id, status: 'PENDING' },
-            data: { status: 'CANCELLED' }
+        // Mark mobile as verified if not already
+        if (!user.is_mobile_verified) {
+          await tx.users.update({
+            where: { user_id: user.user_id },
+            data: { is_mobile_verified: true }
           });
         }
+
+        primaryRole = user.user_roles[0]?.roles?.role_name || 'CUSTOMER';
 
         await auditService.log(
           {
-            userId: user.id,
-            action: 'AUTH_LOGIN_SUCCESS',
-            resource: 'USER',
+            userId: user.user_id,
+            phoneNumber: user.mobile_no,
+            eventType: 'LOGIN_SUCCESS',
             ipAddress: deviceInfo.ipAddress,
-            userAgent: deviceInfo.userAgent,
-            metadata: { mobileNumber: user.mobileNumber, flow: 'UNIFIED_OTP' }
+            deviceId: deviceInfo.deviceId,
+            status: 'SUCCESS'
           },
           tx
         );
       }
 
-      // Create session and issue token pair
+      // Create authenticated device session & token pair
       const tokens = await sessionService.issueTokenPair(
         {
-          userId: user.id,
+          userId: user.user_id,
           deviceId: deviceInfo.deviceId,
+          deviceType: deviceInfo.platform,
           deviceName: deviceInfo.deviceName,
-          platform: deviceInfo.platform,
           ipAddress: deviceInfo.ipAddress,
           userAgent: deviceInfo.userAgent
         },
-        undefined,
         tx
       );
+
+      const customerProfile = user.customer_details_customer_details_user_idTousers;
+      const customerName =
+        user.full_name ||
+        (customerProfile?.first_name ? `${customerProfile.first_name} ${customerProfile.last_name || ''}`.trim() : null);
+
+      const isProfileComplete = !!(customerName && customerProfile?.gender && customerProfile?.date_of_birth);
 
       const userSummary: UserSummaryDto = {
-        id: user.id,
-        mobileNumber: user.mobileNumber,
-        countryCode: user.countryCode,
-        email: user.email,
-        status: user.status,
-        isMobileVerified: user.isMobileVerified,
-        isEmailVerified: user.isEmailVerified,
-        isProfileComplete: user.profile?.isProfileComplete ?? false
+        customerId: Number(user.user_id),
+        name: customerName,
+        phoneNumber: user.mobile_no,
+        email: user.email || null,
+        role: primaryRole,
+        status: user.status || 'ACTIVE',
+        isMobileVerified: user.is_mobile_verified ?? true,
+        isProfileComplete
       };
 
-      return { user: userSummary, tokens, isNewUser };
-    });
-  }
-
-  /**
-   * Initiates the signup OTP verification flow.
-   */
-  async initiateSignup(
-    mobileNumber: string,
-    countryCallingCode = '+91'
-  ): Promise<OtpInitiateResult> {
-    const normalized = normalizePhoneNumber(mobileNumber, countryCallingCode);
-
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { mobileNumber: normalized.e164 }
-    });
-
-    // If user exists and is active, we still dispatch or proceed with login OTP flow seamlessly
-    // to provide good UX without user enumeration
-    const purpose = existingUser ? OtpPurpose.LOGIN : OtpPurpose.SIGNUP;
-
-    return otpService.initiateChallenge(normalized.e164, purpose, existingUser?.id);
-  }
-
-  /**
-   * Verifies the signup OTP challenge, creates user & profile, and establishes a session transactionally.
-   */
-  async verifySignupOtp(
-    challengeId: string,
-    otp: string,
-    deviceInfo: DeviceInfo
-  ): Promise<AuthSuccessDto> {
-    return prisma.$transaction(async (tx) => {
-      // Verify OTP challenge atomically
-      const verification = await otpService.verifyChallenge(
-        challengeId,
-        otp,
-        OtpPurpose.SIGNUP,
-        tx
-      );
-
-      // Create or fetch existing user
-      let user = await tx.user.findUnique({
-        where: { mobileNumber: verification.destination },
-        include: { profile: true }
-      });
-
-      if (!user) {
-        user = await tx.user.create({
-          data: {
-            mobileNumber: verification.destination,
-            isMobileVerified: true,
-            status: UserStatus.ACTIVE,
-            profile: {
-              create: {
-                isProfileComplete: false
-              }
-            }
-          },
-          include: { profile: true }
-        });
-      } else if (!user.isMobileVerified) {
-        user = await tx.user.update({
-          where: { id: user.id },
-          data: { isMobileVerified: true },
-          include: { profile: true }
-        });
-      }
-
-      // Create session and issue tokens
-      const tokens = await sessionService.issueTokenPair(
-        {
-          userId: user.id,
-          deviceId: deviceInfo.deviceId,
-          deviceName: deviceInfo.deviceName,
-          platform: deviceInfo.platform,
-          ipAddress: deviceInfo.ipAddress,
-          userAgent: deviceInfo.userAgent
-        },
-        undefined,
-        tx
-      );
-
-      // Log audit
-      await auditService.log(
-        {
-          userId: user.id,
-          action: 'AUTH_SIGNUP_SUCCESS',
-          resource: 'USER',
-          ipAddress: deviceInfo.ipAddress,
-          userAgent: deviceInfo.userAgent,
-          metadata: { mobileNumber: user.mobileNumber }
-        },
-        tx
-      );
-
-      const userSummary: UserSummaryDto = {
-        id: user.id,
-        mobileNumber: user.mobileNumber,
-        countryCode: user.countryCode,
-        email: user.email,
-        status: user.status,
-        isMobileVerified: user.isMobileVerified,
-        isEmailVerified: user.isEmailVerified,
-        isProfileComplete: user.profile?.isProfileComplete ?? false
+      return {
+        isNewUser,
+        isProfileComplete,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        tokenType: 'Bearer',
+        expiresIn: 900,
+        user: userSummary
       };
-
-      return { user: userSummary, tokens };
     });
   }
 
   /**
-   * Initiates the login OTP verification flow.
+   * Resend OTP subject to cooldown and max attempts
    */
-  async initiateLogin(
-    mobileNumber: string,
-    countryCallingCode = '+91'
-  ): Promise<OtpInitiateResult> {
-    const normalized = normalizePhoneNumber(mobileNumber, countryCallingCode);
-
-    const user = await prisma.user.findUnique({
-      where: { mobileNumber: normalized.e164 }
-    });
-
-    if (user && user.status === UserStatus.BLOCKED) {
-      throw new ForbiddenError('This account has been suspended', 'ACCOUNT_BLOCKED');
-    }
-
-    // Always initiate OTP challenge (creates consistent timing / anti-enumeration)
-    return otpService.initiateChallenge(normalized.e164, OtpPurpose.LOGIN, user?.id);
+  async resendOtp(challengeId: string, ipAddress?: string): Promise<OtpInitiateResult> {
+    return otpService.resendOtp(challengeId, ipAddress);
   }
 
   /**
-   * Verifies login OTP, handles account states (reactivates deactivated or deletion-pending), and issues session.
-   */
-  async verifyLoginOtp(
-    challengeId: string,
-    otp: string,
-    deviceInfo: DeviceInfo
-  ): Promise<AuthSuccessDto> {
-    return prisma.$transaction(async (tx) => {
-      const verification = await otpService.verifyChallenge(
-        challengeId,
-        otp,
-        OtpPurpose.LOGIN,
-        tx
-      );
-
-      let user = await tx.user.findUnique({
-        where: { mobileNumber: verification.destination },
-        include: { profile: true }
-      });
-
-      if (!user) {
-        // If not registered, create as seamless onboarding
-        user = await tx.user.create({
-          data: {
-            mobileNumber: verification.destination,
-            isMobileVerified: true,
-            status: UserStatus.ACTIVE,
-            profile: {
-              create: {
-                isProfileComplete: false
-              }
-            }
-          },
-          include: { profile: true }
-        });
-      }
-
-      if (user.status === UserStatus.BLOCKED) {
-        throw new ForbiddenError('Account is suspended or blocked', 'ACCOUNT_BLOCKED');
-      }
-
-      // Reactivate if deactivated or deletion-pending
-      if (user.status === UserStatus.DEACTIVATED || user.status === UserStatus.DELETION_PENDING) {
-        user = await tx.user.update({
-          where: { id: user.id },
-          data: { status: UserStatus.ACTIVE },
-          include: { profile: true }
-        });
-
-        // Cancel pending deletion requests if any
-        await tx.accountDeletionRequest.updateMany({
-          where: { userId: user.id, status: 'PENDING' },
-          data: { status: 'CANCELLED' }
-        });
-      }
-
-      const tokens = await sessionService.issueTokenPair(
-        {
-          userId: user.id,
-          deviceId: deviceInfo.deviceId,
-          deviceName: deviceInfo.deviceName,
-          platform: deviceInfo.platform,
-          ipAddress: deviceInfo.ipAddress,
-          userAgent: deviceInfo.userAgent
-        },
-        undefined,
-        tx
-      );
-
-      await auditService.log(
-        {
-          userId: user.id,
-          action: 'AUTH_LOGIN_SUCCESS',
-          resource: 'USER',
-          ipAddress: deviceInfo.ipAddress,
-          userAgent: deviceInfo.userAgent,
-          metadata: { mobileNumber: user.mobileNumber }
-        },
-        tx
-      );
-
-      const userSummary: UserSummaryDto = {
-        id: user.id,
-        mobileNumber: user.mobileNumber,
-        countryCode: user.countryCode,
-        email: user.email,
-        status: user.status,
-        isMobileVerified: user.isMobileVerified,
-        isEmailVerified: user.isEmailVerified,
-        isProfileComplete: user.profile?.isProfileComplete ?? false
-      };
-
-      return { user: userSummary, tokens };
-    });
-  }
-
-  /**
-   * Resends an OTP challenge.
-   */
-  async resendOtp(challengeId: string): Promise<OtpInitiateResult> {
-    return otpService.resendOtp(challengeId);
-  }
-
-  /**
-   * Refreshes access token and rotates refresh token.
+   * Refresh Token rotation with reuse detection
    */
   async refreshToken(
-    rawRefreshToken: string,
+    refreshToken: string,
     ipAddress?: string,
     userAgent?: string
   ): Promise<TokenPair> {
-    return sessionService.rotateRefreshToken(rawRefreshToken, ipAddress, userAgent);
+    return sessionService.rotateRefreshToken(refreshToken, ipAddress, userAgent);
   }
 
   /**
-   * Logs out the current session.
+   * Logout current session
    */
-  async logout(sessionId: string, userId?: string, ip?: string, ua?: string): Promise<void> {
-    await sessionService.logout(sessionId);
-    if (userId) {
-      await auditService.log({
-        userId,
-        action: 'AUTH_LOGOUT',
-        resource: 'SESSION',
-        ipAddress: ip,
-        userAgent: ua,
-        metadata: { sessionId }
-      });
-    }
+  async logout(sessionId: string, userId: bigint | string): Promise<void> {
+    await sessionService.logout(sessionId, userId);
   }
 
   /**
-   * Logs out all active sessions for the user.
+   * Logout from all devices
    */
-  async logoutAll(userId: string, ip?: string, ua?: string): Promise<number> {
-    const count = await sessionService.logoutAll(userId);
-    await auditService.log({
-      userId,
-      action: 'AUTH_LOGOUT_ALL',
-      resource: 'SESSION',
-      ipAddress: ip,
-      userAgent: ua,
-      metadata: { revokedSessionsCount: count }
+  async logoutAll(userId: bigint | string): Promise<number> {
+    return sessionService.logoutAll(userId);
+  }
+
+  /**
+   * Get current authenticated user details
+   */
+  async getCurrentUser(userId: bigint | string): Promise<UserSummaryDto> {
+    const parsedUserId = BigInt(userId.toString());
+    const user = await prisma.users.findUnique({
+      where: { user_id: parsedUserId },
+      include: {
+        user_roles: {
+          include: { roles: true }
+        },
+        customer_details_customer_details_user_idTousers: true
+      }
     });
-    return count;
+
+    if (!user) {
+      throw new NotFoundError('User not found', 'USER_NOT_FOUND');
+    }
+
+    const customerProfile = user.customer_details_customer_details_user_idTousers;
+    const customerName =
+      user.full_name ||
+      (customerProfile?.first_name ? `${customerProfile.first_name} ${customerProfile.last_name || ''}`.trim() : null);
+    const primaryRole = user.user_roles[0]?.roles?.role_name || 'CUSTOMER';
+    const isProfileComplete = !!(customerName && customerProfile?.gender && customerProfile?.date_of_birth);
+
+    return {
+      customerId: Number(user.user_id),
+      name: customerName,
+      phoneNumber: user.mobile_no,
+      email: user.email || null,
+      role: primaryRole,
+      status: user.status || 'ACTIVE',
+      isMobileVerified: user.is_mobile_verified ?? true,
+      isProfileComplete
+    };
+  }
+
+  /**
+   * Get all active sessions for current user
+   */
+  async getSessions(userId: bigint | string, currentSessionId: string): Promise<SessionDto[]> {
+    return sessionService.getUserSessions(userId, currentSessionId);
+  }
+
+  /**
+   * Revoke specific user session
+   */
+  async revokeSession(sessionId: string, userId: bigint | string): Promise<void> {
+    return sessionService.revokeUserSession(sessionId, userId);
+  }
+
+  /**
+   * Mobile number change: Send OTP to new mobile number
+   */
+  async changeMobileSendOtp(
+    userId: bigint | string,
+    newPhoneNumber: string,
+    countryCode = '+91',
+    ipAddress?: string
+  ): Promise<OtpInitiateResult> {
+    const normalized = normalizePhoneNumber(newPhoneNumber, countryCode);
+
+    // Verify whether new number is already in use by another user
+    const existingUser = await prisma.users.findUnique({
+      where: { mobile_no: normalized.e164 }
+    });
+
+    const parsedUserId = BigInt(userId.toString());
+    if (existingUser && existingUser.user_id !== parsedUserId) {
+      throw new ConflictError('Mobile number already registered to another account', 'PHONE_NUMBER_IN_USE');
+    }
+
+    return otpService.initiateChallenge(normalized.e164, 'CHANGE_PHONE', ipAddress);
+  }
+
+  /**
+   * Mobile number change: Verify OTP and update mobile number transactionally
+   */
+  async changeMobileVerifyOtp(
+    userId: bigint | string,
+    challengeId: string,
+    otp: string,
+    ipAddress?: string
+  ): Promise<{ customerId: number; phoneNumber: string }> {
+    const parsedUserId = BigInt(userId.toString());
+
+    return prisma.$transaction(async (tx) => {
+      const verification = await otpService.verifyChallenge(
+        challengeId,
+        otp,
+        'CHANGE_PHONE',
+        tx
+      );
+
+      // Re-verify uniqueness
+      const existing = await tx.users.findUnique({
+        where: { mobile_no: verification.phoneNumber }
+      });
+
+      if (existing && existing.user_id !== parsedUserId) {
+        throw new ConflictError('Mobile number already registered to another account', 'PHONE_NUMBER_IN_USE');
+      }
+
+      await tx.users.update({
+        where: { user_id: parsedUserId },
+        data: {
+          mobile_no: verification.phoneNumber,
+          is_mobile_verified: true,
+          updated_on: new Date()
+        }
+      });
+
+      await auditService.log(
+        {
+          userId: parsedUserId,
+          phoneNumber: verification.phoneNumber,
+          eventType: 'MOBILE_NUMBER_CHANGED',
+          ipAddress,
+          status: 'SUCCESS'
+        },
+        tx
+      );
+
+      return {
+        customerId: Number(parsedUserId),
+        phoneNumber: verification.phoneNumber
+      };
+    });
   }
 }
 

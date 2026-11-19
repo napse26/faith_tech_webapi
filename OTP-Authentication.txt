@@ -1,0 +1,640 @@
+DHARMADARSHAN
+OTP Authentication – Developer-Ready Implementation Specification
+Document Type: Technical Implementation & Development Specification
+Module: Authentication & Identity Management
+Version: 1.0
+Mobile Framework: React Native (Android & iOS)
+Backend: Node.js
+Database: PostgreSQL
+API Documentation: Swagger / OpenAPI 3.0
+SMS Provider: MSG91 / Exotel / Configurable SMS Gateway
+Competitor Reference: Astrotalk and AstroYogi
+Database Details-Please use below details to connect database and use existing table and modfy the tables according to requirement.
+ host=db.dpezrpzxuqidqxgivklx.supabase.co
+port=5432
+database=postgres
+user=postgres
+[11:51 pm, 16/11/2026] +91 70370 08384: postgresql://postgres:[YOUR-PASSWORD]@db.dpezrpzxuqidqxgivklx.supabase.co:5432/postgres
+Password: FaithTech@2026
+1. OBJECTIVE
+Implement a secure, scalable, production-ready mobile OTP authentication system for DharmaDarshan.
+The authentication module must support:
+* New customer registration using mobile OTP.
+* Existing customer login using mobile OTP.
+* Automatic customer identification.
+* OTP generation, delivery, verification and expiration.
+* Resend OTP functionality.
+* OTP attempt restrictions.
+* Rate limiting and abuse prevention.
+* Access and refresh token management.
+* Multiple-device session management.
+* Logout and logout from all devices.
+* Account status validation.
+* Mobile number change with OTP verification.
+* Authentication audit logging.
+The implementation must be reusable across customer, astrologer and other approved user roles.
+2. EXISTING PROJECT ARCHITECTURE
+The implementation must integrate with the existing DharmaDarshan project.
+ComponentTechnologyMobile applicationReact NativePlatformsAndroid and iOSBackendNode.jsDatabasePostgreSQLAPI documentationSwagger / OpenAPISMS deliveryMSG91 / Exotel (For dev we use static OTP)Push notificationsFirebase Cloud MessagingAuthenticationCustom backend-managed OTPAccess tokenJWTRefresh tokenSecure opaque random tokenMobile secure storageiOS Keychain / Android Keystore
+Important: Do not introduce Flutter or create a separate authentication application.
+Reuse the existing project structure, database conventions, API response format and authentication middleware wherever possible.
+3. AUTHENTICATION USER FLOW
+3.1 New Customer
+1. Customer opens DharmaDarshan.
+2. Selects Login / Continue.
+3. Enters mobile number and country code.
+4. Frontend validates the number.
+5. Backend validates the request.
+6. Backend generates OTP.
+7. OTP is sent through the configured SMS provider.
+8. Customer enters OTP.
+9. Backend verifies OTP.
+10. Backend checks whether the customer exists.
+11. If the customer does not exist, create a new customer record.
+12. Assign the default USER role.
+13. Mark the mobile number as verified.
+14. Create an authenticated session.
+15. Generate access and refresh tokens.
+16. Return customer details.
+17. Navigate to the customer home screen.
+3.2 Existing Customer
+1. Customer enters registered mobile number.
+2. Backend generates and sends OTP.
+3. Customer enters OTP.
+4. Backend verifies OTP.
+5. Identify the existing customer.
+6. Validate customer account status.
+7. Create a new device session.
+8. Generate access and refresh tokens.
+9. Return customer information.
+10. Navigate to the home screen.
+3.3 Authentication Flow Rules
+* Do not require customers to register separately before OTP login.
+* Existing customer records must never be duplicated.
+* Use normalized E.164 mobile numbers.
+* New customers must receive the default USER role.
+* Do not allow role selection through the public login API.
+* OTP must be generated and verified exclusively by the backend.
+* Successful OTP verification must consume the OTP.
+* Previous OTPs must become invalid when a replacement OTP is issued.
+4. REACT NATIVE MOBILE IMPLEMENTATION
+Create a dedicated authentication module in the existing React Native application.
+Suggested folder structure:
+src/
+??? modules/
+?   ??? authentication/
+?       ??? screens/
+?       ?   ??? LoginScreen.tsx
+?       ?   ??? OTPVerificationScreen.tsx
+?       ?   ??? AccountRecoveryScreen.tsx
+?       ??? components/
+?       ?   ??? CountryCodePicker.tsx
+?       ?   ??? PhoneNumberInput.tsx
+?       ?   ??? OTPInput.tsx
+?       ?   ??? ResendOTP.tsx
+?       ?   ??? AuthLoading.tsx
+?       ?
+?       ??? services/
+?       ?   ??? authService.ts
+?       ?
+?       ??? hooks/
+?       ?   ??? useAuthentication.ts
+?       ?
+?       ??? validation/
+?       ?   ??? authValidation.ts
+?       ?
+?       ??? types/
+?       ?   ??? auth.types.ts
+?       ?
+?       ??? utils/
+?           ??? phoneNumber.ts
+?           ??? tokenManager.ts
+?
+??? navigation/
+?   ??? RootNavigator.tsx
+?
+??? services/
+?   ??? apiClient.ts
+?
+??? storage/
+    ??? secureStorage.ts
+Adapt the structure to the existing application rather than duplicating existing shared utilities.
+4.1 Login Screen
+Required UI elements:
+* DharmaDarshan logo.
+* Welcome message.
+* Country code selector.
+* Mobile number input.
+* Continue button.
+* Terms and Privacy Policy links.
+* Loading indicator.
+* Inline validation messages.
+Validation requirements:
+ConditionExpected behaviourEmpty mobile numberShow required validationInvalid mobile numberShow invalid numberInvalid country codeRejectUnsupported countryShow appropriate errorNon-numeric inputRejectNumber exceeds supported lengthPrevent additional inputValid numberEnable ContinueAPI request pendingDisable duplicate submissionsNetwork failureShow retry option
+Use a phone-number parsing library compatible with React Native, such as libphonenumber-js.
+Normalize phone numbers before sending them to the backend.
+4.2 OTP Verification Screen
+Required UI elements:
+* Masked mobile number.
+* Four-digit OTP input.
+* Verify button.
+* Resend OTP countdown.
+* Resend OTP button.
+* Change mobile number option.
+* Loading indicator.
+* Error messages.
+Initial configuration:
+ParameterValueOTP length4 digitsOTP expiration300 secondsResend cooldown90 secondsMaximum verification attempts5, Cooldown of 1hr
+Functional requirements:
+* Support manual OTP entry.
+* Support OTP paste.
+* Support Android SMS OTP autofill where available.
+* Support iOS one-time-code autofill.
+* Automatically submit when all four digits are entered.
+* Prevent multiple simultaneous verification requests.
+* Display remaining resend time.
+* Clear OTP input after invalid verification.
+* Allow the user to change their mobile number.
+* Handle app backgrounding and foregrounding.
+* Never persist the OTP in local storage.
+Use React Native's appropriate platform-supported OTP autofill mechanisms. Do not implement insecure SMS interception or request unnecessary SMS-reading permissions.
+5. BACKEND MODULE STRUCTURE
+Create a dedicated authentication module within the existing Node.js application.
+Suggested structure:
+src/
+??? modules/
+?   ??? authentication/
+?       ??? controllers/
+?       ?   ??? auth.controller.js
+?       ??? services/
+?       ?   ??? auth.service.js
+?       ?   ??? otp.service.js
+?       ?   ??? sms.service.js
+?       ?   ??? customer.service.js
+?       ?   ??? session.service.js
+?       ?
+?       ??? repositories/
+?       ?   ??? otp.repository.js
+?       ?   ??? customer.repository.js
+?       ?   ??? session.repository.js
+?       ?
+?       ??? middleware/
+?       ?   ??? auth.middleware.js
+?       ?   ??? rateLimit.middleware.js
+?       ?
+?       ??? validators/
+?       ?   ??? auth.validator.js
+?       ?
+?       ??? routes/
+?       ?   ??? auth.routes.js
+?       ??? providers/
+?       ?   ??? sms.provider.js
+?       ?   ??? msg91.provider.js
+?       ?   ??? exotel.provider.js
+?       ??? constants/
+?           ??? auth.constants.js
+??? config/
+    ??? swagger.js
+Use the project's existing JavaScript or TypeScript convention. Do not introduce a second coding standard.
+6. DATABASE IMPLEMENTATION
+First inspect the existing PostgreSQL database and reuse existing customer and role tables.
+Existing tables to reuse:
+* customer_details
+* roles
+* role_permissions
+Do not create duplicate customer or role tables.
+Create the following new tables if they do not already exist.
+6.1 otp_verification
+Purpose: Store OTP challenges and verification metadata.
+ColumnTypeConstraintidUUIDPrimary keychallenge_idUUIDUniquephone_numberVARCHAR(20)Not nullpurposeVARCHAR(30)Not nullchannelVARCHAR(20)Not nullotp_hashVARCHAR(128)Not nullstatusVARCHAR(20)Not nullattemptsINTEGERDefault 0resend_countINTEGERDefault 0expires_atTIMESTAMPTZNot nullverified_atTIMESTAMPTZNullableconsumed_atTIMESTAMPTZNullablecreated_atTIMESTAMPTZDefault now()updated_atTIMESTAMPTZDefault now()
+Allowed purposes:
+* LOGIN
+* REGISTER
+* CHANGE_PHONE
+* ACCOUNT_RECOVERY
+Allowed statuses:
+* PENDING
+* VERIFIED
+* EXPIRED
+* LOCKED
+* CONSUMED
+* DELIVERY_FAILED
+The OTP hash must use a server-side secret and must not contain plaintext OTP data.
+6.2 user_sessions
+Purpose: Manage authenticated customer devices.
+ColumnTypeidUUIDuser_idBIGINT / existing customer PK typedevice_idVARCHAR(255)device_typeVARCHAR(20)device_nameVARCHAR(255)refresh_token_hashVARCHAR(128)ip_addressINETuser_agentTEXTexpires_atTIMESTAMPTZlast_active_atTIMESTAMPTZrevoked_atTIMESTAMPTZcreated_atTIMESTAMPTZ
+Requirements:
+* Each device session must have a unique identifier.
+* Refresh tokens must be stored as hashes.
+* Revoked sessions cannot be refreshed.
+* Support multiple simultaneous devices.
+* Support individual session revocation.
+* Support logout from all devices.
+* Implement refresh-token rotation and token reuse detection.
+Consider a separate refresh-token family or token-generation record to track token rotation securely.
+6.3 auth_audit_logs
+Purpose: Maintain authentication activity and security events.
+ColumnTypeidUUIDuser_idBIGINT / existing customer PK type, nullablephone_numberVARCHAR(20), appropriately protectedevent_typeVARCHAR(50)ip_addressINETdevice_idVARCHAR(255)statusVARCHAR(20)failure_reasonVARCHAR(100)created_atTIMESTAMPTZ
+Events to record:
+* OTP_REQUESTED
+* OTP_SENT
+* OTP_DELIVERY_FAILED
+* OTP_VERIFICATION_SUCCESS
+* OTP_VERIFICATION_FAILED
+* OTP_EXPIRED
+* OTP_RESENT
+* LOGIN_SUCCESS
+* LOGIN_FAILED
+* TOKEN_REFRESHED
+* TOKEN_REUSE_DETECTED
+* LOGOUT
+* LOGOUT_ALL
+* SESSION_REVOKED
+* MOBILE_NUMBER_CHANGED
+Never log OTP values, access tokens, refresh tokens or sensitive authentication secrets.
+6.4 Database constraints and indexing
+Implement:
+* Unique index on normalized customer mobile number.
+* Unique index on challenge_id.
+* Index on OTP phone number and creation timestamp.
+* Index on session user_id.
+* Index on refresh token hash.
+* Index on authentication audit event and timestamp.
+* Foreign keys using the actual existing customer primary key type.
+* Appropriate retention and cleanup for expired OTP records.
+All timestamps must use UTC.
+7. API IMPLEMENTATION
+API Base Path:
+/api/v1/auth
+All endpoints must be documented in Swagger.
+7.1 Send OTP
+POST /send-otp
+Request:
+{
+"phoneNumber": "+919876543210",
+"countryCode": "+91",
+"purpose": "LOGIN",
+"channel": "SMS"
+}
+Backend operations:
+1. Validate request.
+2. Normalize phone number.
+3. Apply IP and phone-number rate limits.
+4. Check account eligibility.
+5. Generate six-digit OTP.
+6. Generate unique challenge ID.
+7. Generate keyed OTP hash.
+8. Persist challenge.
+9. Invalidate previous active challenge for the same purpose and number.
+10. Send OTP using configured SMS provider.
+11. Return challenge metadata.
+Response:
+{
+"success": true,
+"message": "OTP sent successfully",
+"data": {
+"challengeId": "challenge-uuid",
+"maskedPhoneNumber": "+91******3210",
+"otpLength": 4,
+"expiresIn": 300,
+"resendAfter": 90
+  }
+}
+Never return OTP in API responses.
+Use a generic response policy that does not reveal whether the phone number belongs to an existing customer.
+7.2 Verify OTP
+POST /verify-otp
+Request:
+{
+"challengeId": "challenge-uuid",
+"otp": "483921",
+"device": {
+"deviceId": "device-123",
+"platform": "ANDROID",
+"appVersion": "1.0.0"
+  }
+}
+Backend operations:
+1. Validate request.
+2. Retrieve challenge.
+3. Verify challenge status.
+4. Verify expiration.
+5. Verify attempt limit.
+6. Compare HMAC securely.
+7. Increment failed attempts for invalid OTP.
+8. Atomically consume successful OTP.
+9. Find customer using normalized mobile number.
+10. Create customer if necessary.
+11. Assign default USER role for new customer.
+12. Check customer account status.
+13. Create session.
+14. Generate access token.
+15. Generate refresh token.
+16. Persist refresh token hash.
+17. Record audit event.
+18. Return authentication response.
+The OTP consumption, customer creation where applicable, and session creation must use appropriate transaction boundaries. Handle concurrent verification safely.
+Response:
+{
+"success": true,
+"message": "Login successful",
+"data": {
+"isNewUser": true,
+"isProfileComplete": false,
+"accessToken": "ACCESS_TOKEN",
+"refreshToken": "REFRESH_TOKEN",
+"tokenType": "Bearer",
+"expiresIn": 900,
+"user": {
+"customerId": 101,
+"name": null,
+"phoneNumber": "+919876543210",
+"role": "USER",
+"status": "ACTIVE",
+"isMobileVerified": true
+    }
+  }
+}
+Adapt customer field names and IDs to the actual existing schema.
+7.3 Resend OTP
+POST /resend-otp
+Request:
+{
+"challengeId": "challenge-uuid"
+}
+Validations:
+* Challenge must exist.
+* Challenge must be eligible for resend.
+* Resend cooldown must have elapsed.
+* Resend limit must not be exceeded.
+* Challenge must not already be consumed.
+* New OTP must be generated.
+* Previous OTP must become invalid.
+7.4 Refresh Token
+POST /refresh-token
+Request:
+{
+"refreshToken": "REFRESH_TOKEN"
+}
+Operations:
+* Validate refresh token.
+* Verify session status.
+* Verify token expiration.
+* Rotate refresh token.
+* Store new token hash.
+* Invalidate previous token.
+* Return new access and refresh tokens.
+Refresh-token reuse must trigger revocation of the affected token family and a security audit event.
+7.5 Logout
+POST /logout
+Authenticated endpoint.
+Operations:
+* Identify current session.
+* Revoke session.
+* Invalidate refresh token.
+* Return successful logout response.
+7.6 Logout All Devices
+POST /logout-all
+Authenticated endpoint.
+Operations:
+* Identify authenticated customer.
+* Revoke all active sessions.
+* Invalidate all associated refresh tokens.
+* Record audit event.
+7.7 Get Current User
+GET /me
+Authenticated endpoint.
+Return:
+* Customer ID.
+* Customer name.
+* Mobile number.
+* Email, if available.
+* Role.
+* Account status.
+* Profile completion status.
+* Mobile verification status.
+7.8 Active Sessions
+GET /sessions
+Authenticated endpoint.
+Return all active sessions associated with the current customer.
+7.9 Revoke Selected Session
+DELETE /sessions/{sessionId}
+Revoke the specified session after verifying that it belongs to the authenticated customer.
+7.10 Change Mobile Number
+POST /change-mobile/send-otp
+POST /change-mobile/verify-otp
+Requirements:
+* Require an authenticated user.
+* Verify the existing session.
+* Verify ownership of the new mobile number.
+* Check whether the number is already associated with another customer.
+* Require successful OTP verification for the new number.
+* Update customer mobile number transactionally.
+* Record the change in audit logs.
+* Apply an appropriate security policy to other sessions.
+8. OTP VALIDATION AND SECURITY RULES
+Initial configuration:
+ParameterValueOTP digits4OTP validity5 minutesResend cooldown90 secondsVerification attempts5 per challengePhone OTP request limit5 per hourIP OTP request limit10 per hourAccess token validity15 minutesRefresh token validity30 days
+These values must be environment-configurable.
+Additional security requirements:
+1. Use cryptographically secure random OTP generation.
+2. Store only keyed OTP hashes.
+3. Never store OTP plaintext.
+4. Never return OTP in production responses.
+5. Never log OTP.
+6. Invalidate previous OTP after resend.
+7. Consume OTP exactly once.
+8. Enforce attempt limits atomically.
+9. Apply IP and phone-based rate limiting.
+10. Use HTTPS exclusively.
+11. Validate JWT signature, issuer, audience and expiration.
+12. Rotate refresh tokens.
+13. Detect refresh-token reuse.
+14. Protect against concurrent verification requests.
+15. Prevent customer ID manipulation.
+16. Prevent unauthorized role assignment.
+17. Avoid account enumeration through login responses.
+18. Implement audit logging and retention policies.
+For OTP hashing, use HMAC-SHA-256 with a server-side secret and challenge-specific context.
+For refresh tokens, use high-entropy cryptographically random opaque tokens.
+9. CUSTOMER ACCOUNT STATUS RULES
+Validate the customer status after successful OTP verification.
+StatusExpected actionACTIVEAllow loginINACTIVEApply reactivation policySUSPENDEDDeny accessBLOCKEDDeny accessDELETEDApply account recovery policyPENDING_VERIFICATIONComplete required verificationUNDER_REVIEWApply restricted access policy
+Do not automatically reactivate suspended or blocked customers after successful OTP verification.
+10. API ERROR HANDLING
+Use a standardized error response:
+{
+"success": false,
+"message": "OTP has expired",
+"error": {
+"code": "OTP_EXPIRED",
+"details": null
+  }
+}
+Error codes:
+CodeHTTPINVALID_PHONE_NUMBER400INVALID_OTP400OTP_EXPIRED400OTP_ALREADY_USED409OTP_ATTEMPTS_EXCEEDED429RESEND_COOLDOWN_ACTIVE429RATE_LIMIT_EXCEEDED429ACCOUNT_SUSPENDED403ACCOUNT_BLOCKED403INVALID_CHALLENGE404SMS_DELIVERY_FAILED503INVALID_REFRESH_TOKEN401SESSION_REVOKED401VALIDATION_ERROR400INTERNAL_SERVER_ERROR500
+For internal errors, log the technical details securely and return a generic message to the client.
+11. COMPLETE TESTING REQUIREMENTS
+Functional testing
+IDScenarioExpected resultTC-001New customer enters valid numberOTP sentTC-002Existing customer enters valid numberOTP sentTC-003Invalid mobile numberValidation errorTC-004Correct OTPLogin successfulTC-005Incorrect OTPVerification rejectedTC-006Expired OTPVerification rejectedTC-007Resend OTPNew OTP generatedTC-008Old OTP after resendRejectedTC-009Reuse OTPRejectedTC-010Duplicate customer numberExisting customer reusedTC-011New customer registrationOne customer record createdTC-012Suspended customerAccess deniedTC-013LogoutSession revokedTC-014Refresh access tokenNew tokens generatedTC-015Revoked refresh tokenRefresh rejected
+Security testing
+IDScenarioExpected resultSEC-001Brute-force OTP attemptsBlockedSEC-002Repeated OTP requestsRate limitedSEC-003OTP replayRejectedSEC-004Refresh token reuseToken family revokedSEC-005Access another user's sessionUnauthorizedSEC-006Manipulate customer IDUnauthorizedSEC-007Modify JWT payloadSignature rejectedSEC-008Request protected API without token401SEC-009Access revoked sessionRejectedSEC-010OTP stored in databaseNo plaintextSEC-011OTP exposed in logsMust not occurSEC-012Concurrent OTP verificationOnly one succeeds
+React Native UI testing
+* Empty mobile number.
+* Invalid country code.
+* Valid mobile number.
+* OTP entry.
+* OTP paste.
+* Android OTP autofill.
+* iOS OTP autofill.
+* Wrong OTP.
+* Expired OTP.
+* Resend countdown.
+* Resend before cooldown.
+* Change mobile number.
+* Internet disconnected.
+* SMS delivery delayed.
+* App background and foreground.
+* App closed during verification.
+* Keyboard visibility.
+* Screen orientation and responsive layout.
+* Token persistence after app restart.
+Integration testing
+* SMS provider success.
+* SMS provider failure.
+* SMS provider timeout.
+* Database unavailable.
+* Redis unavailable.
+* Backend restart during OTP challenge.
+* Customer registration transaction failure.
+* Concurrent login requests.
+* Concurrent resend requests.
+* Session refresh and revocation.
+* Multi-device login.
+Performance testing
+Initial test scenarios:
+* 100 concurrent OTP requests.
+* 500 concurrent OTP requests.
+* 500 concurrent OTP verification requests.
+* Concurrent customer registrations.
+* Burst resend requests.
+* Multiple backend instances sharing rate-limit state.
+Measure API response time, error rate, database locking, Redis latency and SMS delivery performance.
+12. ROLE-BASED AUTHENTICATION
+The authentication module must support multiple user types.
+RoleAuthenticationLanding pageUSERMobile OTPCustomer homeASTROLOGERMobile OTPAstrologer dashboardPANDITMobile OTPPandit dashboardTEMPLE_ADMINMobile OTPTemple managementADMINOTP + additional securityAdmin dashboardSUPER_ADMINStrong authentication + MFAAdministration
+Important rules:
+* Public registration must create USER accounts only.
+* ASTROLOGER and PANDIT accounts require approved onboarding.
+* ADMIN roles must be assigned only by authorized administrators.
+* Role-based authorization must be implemented on the backend.
+* Never trust a role received from the React Native application.
+13. ENVIRONMENT CONFIGURATION
+Create the following environment variables:
+OTP_LENGTH=4
+OTP_EXPIRY_SECONDS=300
+OTP_RESEND_COOLDOWN=90
+OTP_MAX_ATTEMPTS=5
+
+OTP_SECRET=CHANGE_ME
+JWT_ACCESS_SECRET=CHANGE_ME
+JWT_ACCESS_EXPIRY=15m
+
+REFRESH_TOKEN_EXPIRY_DAYS=30
+
+SMS_PROVIDER=MSG91
+MSG91_AUTH_KEY=CHANGE_ME
+MSG91_TEMPLATE_ID=CHANGE_ME
+
+REDIS_URL=CHANGE_ME
+Use a proper secret manager in production. Do not commit secrets to Git.
+The sample configuration above must be supplemented with provider-specific credentials and configuration.
+14. SWAGGER DOCUMENTATION REQUIREMENTS
+Create Swagger documentation for every authentication API.
+Swagger must contain:
+* Endpoint description.
+* HTTP method.
+* Authentication requirement.
+* Request schema.
+* Response schema.
+* Required and optional fields.
+* Validation rules.
+* Success responses.
+* Error responses.
+* Example request and response.
+* Bearer authentication configuration.
+Swagger should be accessible through the existing project's API documentation URL.
+Do not create undocumented authentication endpoints.
+15. DEVELOPMENT ACCEPTANCE CRITERIA
+The feature will be considered complete only when:
+1. A new customer can register using mobile OTP.
+2. An existing customer can log in using mobile OTP.
+3. OTP generation and verification work through backend APIs.
+4. OTP expiration and resend work correctly.
+5. Attempt restrictions are enforced.
+6. SMS delivery is integrated.
+7. Customer records are not duplicated.
+8. Account status validation works.
+9. Session and token management work.
+10. Multiple-device authentication works.
+11. Logout and logout-all work.
+12. React Native Android integration is complete.
+13. React Native iOS integration is complete.
+14. Swagger documentation is available.
+15. Database migration scripts are provided.
+16. Functional and security test cases pass.
+17. No OTP or authentication secrets are exposed in logs.
+18. Existing DharmaDarshan features and database functionality remain unaffected.
+16. IMPLEMENTATION INSTRUCTIONS FOR THE DEVELOPMENT TEAM
+Before writing any code:
+1. Inspect the existing React Native project.
+2. Inspect the existing Node.js backend.
+3. Inspect the PostgreSQL schema.
+4. Identify existing authentication-related code.
+5. Inspect the customer_details and roles tables.
+6. Identify the existing API response convention.
+7. Prepare a list of required schema changes.
+8. Prepare an implementation plan.
+Then implement the feature incrementally.
+Strict development rules:
+* Do not recreate existing tables.
+* Do not modify unrelated database structures.
+* Do not delete existing customer records.
+* Do not introduce Flutter.
+* Do not create mock authentication logic for production.
+* Do not hardcode OTP values.
+* Do not expose OTP in API responses.
+* Do not bypass backend validation.
+* Do not assign privileged roles through public APIs.
+* Do not break existing APIs.
+* Use database migrations for schema changes.
+* Maintain backward compatibility.
+* Implement proper error handling.
+* Add automated tests.
+* Keep all API documentation synchronized with implementation.
+17. REQUIRED FINAL DELIVERABLES
+The development team must provide:
+1. Updated PostgreSQL database schema.
+2. Database migration scripts.
+3. Complete Node.js authentication module.
+4. SMS provider integration.
+5. OTP generation and verification services.
+6. Session and token management services.
+7. Complete React Native login screens.
+8. Complete React Native OTP verification screens.
+9. Android and iOS OTP autofill support.
+10. Swagger/OpenAPI documentation.
+11. Unit test cases.
+12. Integration test cases.
+13. Security test cases.
+14. Postman collection.
+15. Environment configuration documentation.
+16. Deployment and production configuration guide.
+FINAL EXPECTATION
+Deliver a fully functional, production-ready OTP Authentication and Identity Management module for DharmaDarshan.
+The implementation must follow a clean, modular and scalable architecture, support both Android and iOS through the existing React Native application, integrate with the existing Node.js and PostgreSQL infrastructure, and provide complete Swagger documentation so other developers can independently consume the authentication APIs.
+Do not stop after creating UI screens or database tables. Complete the end-to-end implementation, API integration, validation, security controls and automated testing.
+
+
+
+

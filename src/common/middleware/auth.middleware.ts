@@ -2,13 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import { sessionService } from '../../modules/sessions/session.service';
 import { prisma } from '../../config/database';
 import { UnauthorizedError, ForbiddenError } from '../errors/app-error';
-import { UserStatus, SessionStatus } from '@prisma/client';
 
 export interface AuthenticatedUser {
   id: string;
+  userId: bigint;
   sessionId: string;
   mobileNumber: string;
-  status: UserStatus;
+  role: string;
+  status: string;
 }
 
 declare global {
@@ -27,7 +28,7 @@ export async function authenticate(
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    next(new UnauthorizedError('Missing or malformed Authorization header', 'MISSING_TOKEN'));
+    next(new UnauthorizedError('Missing or malformed Authorization header', 'UNAUTHORIZED'));
     return;
   }
 
@@ -37,20 +38,32 @@ export async function authenticate(
     const payload = sessionService.verifyAccessToken(token);
 
     // Verify session is active in database (revocation check)
-    const session = await prisma.session.findUnique({
+    const session = await prisma.user_sessions.findUnique({
       where: { id: payload.sid },
-      select: { id: true, status: true, expiresAt: true }
+      select: { id: true, revoked_at: true, expires_at: true }
     });
 
-    if (!session || session.status !== SessionStatus.ACTIVE || session.expiresAt < new Date()) {
+    if (!session || session.revoked_at !== null || session.expires_at < new Date()) {
       next(new UnauthorizedError('Session has been revoked or expired', 'SESSION_REVOKED'));
       return;
     }
 
-    // Verify user in DB
-    const user = await prisma.user.findUnique({
-      where: { id: payload.sub },
-      select: { id: true, mobileNumber: true, status: true }
+    // Touch session activity asynchronously
+    prisma.user_sessions.update({
+      where: { id: session.id },
+      data: { last_active_at: new Date() }
+    }).catch(() => {});
+
+    // Verify user in DB with their roles
+    const user = await prisma.users.findUnique({
+      where: { user_id: BigInt(payload.sub) },
+      include: {
+        user_roles: {
+          include: {
+            roles: true
+          }
+        }
+      }
     });
 
     if (!user) {
@@ -58,26 +71,27 @@ export async function authenticate(
       return;
     }
 
-    if (user.status === UserStatus.BLOCKED) {
-      next(new ForbiddenError('Account has been suspended or blocked', 'ACCOUNT_BLOCKED'));
+    const accountStatus = user.status || (user.is_active ? 'ACTIVE' : 'INACTIVE');
+
+    if (accountStatus === 'BLOCKED') {
+      next(new ForbiddenError('Account has been blocked', 'ACCOUNT_BLOCKED'));
       return;
     }
 
-    if (user.status === UserStatus.DEACTIVATED) {
-      next(new ForbiddenError('Account is deactivated. Please log in to reactivate.', 'ACCOUNT_DEACTIVATED'));
+    if (accountStatus === 'SUSPENDED') {
+      next(new ForbiddenError('Account has been suspended', 'ACCOUNT_SUSPENDED'));
       return;
     }
 
-    if (user.status === UserStatus.DELETION_PENDING) {
-      next(new ForbiddenError('Account is pending deletion. Please log in to cancel deletion request.', 'ACCOUNT_DELETION_PENDING'));
-      return;
-    }
+    const primaryRole = user.user_roles[0]?.roles?.role_name || 'CUSTOMER';
 
     req.user = {
-      id: user.id,
+      id: user.user_id.toString(),
+      userId: user.user_id,
       sessionId: payload.sid,
-      mobileNumber: user.mobileNumber,
-      status: user.status
+      mobileNumber: user.mobile_no,
+      role: primaryRole,
+      status: accountStatus
     };
 
     next();
@@ -85,4 +99,3 @@ export async function authenticate(
     next(error);
   }
 }
-

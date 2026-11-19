@@ -1,4 +1,4 @@
-import { Gender } from '@prisma/client';
+export type Gender = 'MALE' | 'FEMALE' | 'NON_BINARY' | 'OTHER' | 'PREFER_NOT_TO_SAY' | string;
 
 export interface UserProfileDto {
   userId: string;
@@ -8,7 +8,7 @@ export interface UserProfileDto {
   isEmailVerified: boolean;
   fullName: string | null;
   displayName: string | null;
-  gender: Gender | null;
+  gender: string | null;
   avatarUrl: string | null;
   preferredLanguage: string;
   country: string | null;
@@ -16,14 +16,14 @@ export interface UserProfileDto {
   city: string | null;
   timezone: string;
   isProfileComplete: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
 }
 
 export interface UpdateProfileInput {
   fullName?: string | null;
   displayName?: string | null;
-  gender?: Gender | null;
+  gender?: string | null;
   avatarUrl?: string | null;
   preferredLanguage?: string;
   country?: string | null;

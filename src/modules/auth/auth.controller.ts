@@ -5,10 +5,20 @@ import { createSuccessResponse } from '../../common/types/api-response';
 export class AuthController {
   async sendOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { mobileNumber, countryCode } = req.body;
-      const result = await authService.sendOtp(mobileNumber, countryCode);
+      const { phoneNumber, mobileNumber, countryCode, purpose, channel } = req.body;
+      const targetPhone = phoneNumber || mobileNumber;
+      const ip = req.ip || req.socket.remoteAddress;
+
+      const result = await authService.sendOtp(
+        targetPhone,
+        countryCode || '+91',
+        purpose || 'LOGIN',
+        channel || 'SMS',
+        ip
+      );
+
       res.status(200).json(
-        createSuccessResponse(result, 'Verification code sent successfully', req.traceId)
+        createSuccessResponse(result, 'OTP sent successfully', req.traceId)
       );
     } catch (error) {
       next(error);
@@ -17,86 +27,20 @@ export class AuthController {
 
   async verifyOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { challengeId, otp, deviceId, deviceName, platform } = req.body;
+      const { challengeId, otp, device, deviceId, deviceName, platform } = req.body;
       const deviceInfo = {
-        deviceId,
-        deviceName,
-        platform,
+        deviceId: device?.deviceId || deviceId,
+        deviceName: device?.deviceName || deviceName,
+        platform: device?.platform || platform,
+        appVersion: device?.appVersion,
         ipAddress: req.ip || req.socket.remoteAddress,
         userAgent: req.headers['user-agent']
       };
 
       const result = await authService.verifyOtp(challengeId, otp, deviceInfo);
-      const message = result.isNewUser
-        ? 'Account registered and authenticated successfully'
-        : 'Authenticated successfully';
 
-      res.status(result.isNewUser ? 201 : 200).json(
-        createSuccessResponse(result, message, req.traceId)
-      );
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async initiateSignup(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { mobileNumber, countryCode } = req.body;
-      const result = await authService.initiateSignup(mobileNumber, countryCode);
       res.status(200).json(
-        createSuccessResponse(result, 'Verification code sent successfully', req.traceId)
-      );
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async verifySignupOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { challengeId, otp, deviceId, deviceName, platform } = req.body;
-      const deviceInfo = {
-        deviceId,
-        deviceName,
-        platform,
-        ipAddress: req.ip || req.socket.remoteAddress,
-        userAgent: req.headers['user-agent']
-      };
-
-      const result = await authService.verifySignupOtp(challengeId, otp, deviceInfo);
-      res.status(201).json(
-        createSuccessResponse(result, 'Account created and authenticated successfully', req.traceId)
-      );
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async initiateLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { mobileNumber, countryCode } = req.body;
-      const result = await authService.initiateLogin(mobileNumber, countryCode);
-      res.status(200).json(
-        createSuccessResponse(result, 'Login verification code sent successfully', req.traceId)
-      );
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async verifyLoginOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { challengeId, otp, deviceId, deviceName, platform } = req.body;
-      const deviceInfo = {
-        deviceId,
-        deviceName,
-        platform,
-        ipAddress: req.ip || req.socket.remoteAddress,
-        userAgent: req.headers['user-agent']
-      };
-
-      const result = await authService.verifyLoginOtp(challengeId, otp, deviceInfo);
-      res.status(200).json(
-        createSuccessResponse(result, 'Authenticated successfully', req.traceId)
+        createSuccessResponse(result, 'Login successful', req.traceId)
       );
     } catch (error) {
       next(error);
@@ -106,9 +50,11 @@ export class AuthController {
   async resendOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { challengeId } = req.body;
-      const result = await authService.resendOtp(challengeId);
+      const ip = req.ip || req.socket.remoteAddress;
+      const result = await authService.resendOtp(challengeId, ip);
+
       res.status(200).json(
-        createSuccessResponse(result, 'Verification code resent successfully', req.traceId)
+        createSuccessResponse(result, 'OTP resent successfully', req.traceId)
       );
     } catch (error) {
       next(error);
@@ -121,6 +67,7 @@ export class AuthController {
       const ip = req.ip || req.socket.remoteAddress;
       const ua = req.headers['user-agent'];
       const tokens = await authService.refreshToken(refreshToken, ip, ua);
+
       res.status(200).json(
         createSuccessResponse(tokens, 'Token refreshed successfully', req.traceId)
       );
@@ -132,9 +79,7 @@ export class AuthController {
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (req.user) {
-        const ip = req.ip || req.socket.remoteAddress;
-        const ua = req.headers['user-agent'];
-        await authService.logout(req.user.sessionId, req.user.id, ip, ua);
+        await authService.logout(req.user.sessionId, req.user.userId);
       }
       res.status(200).json(
         createSuccessResponse(null, 'Logged out successfully', req.traceId)
@@ -147,12 +92,85 @@ export class AuthController {
   async logoutAll(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (req.user) {
-        const ip = req.ip || req.socket.remoteAddress;
-        const ua = req.headers['user-agent'];
-        await authService.logoutAll(req.user.id, ip, ua);
+        await authService.logoutAll(req.user.userId);
       }
       res.status(200).json(
-        createSuccessResponse(null, 'All active sessions revoked successfully', req.traceId)
+        createSuccessResponse(null, 'Logged out from all devices successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const user = await authService.getCurrentUser(req.user!.userId);
+      res.status(200).json(
+        createSuccessResponse(user, 'Current user profile fetched successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getSessions(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const sessions = await authService.getSessions(req.user!.userId, req.user!.sessionId);
+      res.status(200).json(
+        createSuccessResponse(sessions, 'Active sessions retrieved successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async revokeSession(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const sessionId = String(req.params.sessionId);
+      await authService.revokeSession(sessionId, req.user!.userId);
+      res.status(200).json(
+        createSuccessResponse(null, 'Session revoked successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async changeMobileSendOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { newPhoneNumber, phoneNumber, countryCode } = req.body;
+      const targetPhone = newPhoneNumber || phoneNumber;
+      const ip = req.ip || req.socket.remoteAddress;
+
+      const result = await authService.changeMobileSendOtp(
+        req.user!.userId,
+        targetPhone,
+        countryCode || '+91',
+        ip
+      );
+
+      res.status(200).json(
+        createSuccessResponse(result, 'OTP sent to new mobile number', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async changeMobileVerifyOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { challengeId, otp } = req.body;
+      const ip = req.ip || req.socket.remoteAddress;
+
+      const result = await authService.changeMobileVerifyOtp(
+        req.user!.userId,
+        challengeId,
+        otp,
+        ip
+      );
+
+      res.status(200).json(
+        createSuccessResponse(result, 'Mobile number updated successfully', req.traceId)
       );
     } catch (error) {
       next(error);

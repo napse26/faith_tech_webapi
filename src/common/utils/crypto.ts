@@ -2,21 +2,29 @@ import crypto from 'crypto';
 import { env } from '../../config/env';
 
 /**
- * Generates a cryptographically secure 6-digit numeric OTP.
+ * Generates a cryptographically secure numeric OTP (default 4 digits per DharmaDarshan spec).
  */
-export function generateOtp(): string {
-  return crypto.randomInt(100000, 1000000).toString();
+export function generateOtp(length = env.OTP_LENGTH || 4): string {
+  if (length === 4) {
+    return crypto.randomInt(1000, 10000).toString();
+  }
+  if (length === 6) {
+    return crypto.randomInt(100000, 1000000).toString();
+  }
+  const min = Math.pow(10, length - 1);
+  const max = Math.pow(10, length);
+  return crypto.randomInt(min, max).toString();
 }
 
 /**
- * Generates a random cryptographic hex salt.
+ * Generates a random cryptographic hex salt or challenge context.
  */
 export function generateSalt(length = 16): string {
   return crypto.randomBytes(length).toString('hex');
 }
 
 /**
- * Computes an HMAC-SHA256 digest of an OTP with salt and secret.
+ * Computes an HMAC-SHA256 digest of an OTP with salt/context and server-side secret.
  */
 export function hashOtp(otp: string, salt: string): string {
   const hmac = crypto.createHmac('sha256', env.OTP_HMAC_SECRET);

@@ -1,24 +1,35 @@
-import { OtpPurpose, OtpStatus } from '@prisma/client';
+export type OtpPurpose = 'LOGIN' | 'REGISTER' | 'CHANGE_PHONE' | 'ACCOUNT_RECOVERY' | 'AUTHENTICATION';
+
+export type OtpStatus =
+  | 'PENDING'
+  | 'VERIFIED'
+  | 'EXPIRED'
+  | 'LOCKED'
+  | 'CONSUMED'
+  | 'DELIVERY_FAILED'
+  | 'SUPERSEDED'
+  | 'MAX_ATTEMPTS_EXCEEDED';
 
 export interface CreateOtpChallengeParams {
-  userId?: string;
-  purpose: OtpPurpose;
-  destination: string;
+  phoneNumber: string;
+  purpose: OtpPurpose | string;
+  channel?: string;
+  ipAddress?: string;
 }
 
 export interface OtpInitiateResult {
   challengeId: string;
-  cooldownSeconds: number;
-  resendAvailableAt: Date;
-  expiresAt: Date;
-  maskedDestination: string;
-  isExistingUser?: boolean;
+  maskedPhoneNumber: string;
+  otpLength: number;
+  expiresIn: number;
+  resendAfter: number;
   sampleOtp?: string;
+  isExistingUser?: boolean;
 }
 
 export interface VerifyOtpResult {
   valid: boolean;
-  destination: string;
-  purpose: OtpPurpose;
-  userId?: string | null;
+  phoneNumber: string;
+  purpose: string;
+  challengeId: string;
 }

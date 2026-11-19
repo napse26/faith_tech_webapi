@@ -19,14 +19,14 @@ export function errorHandler(
       logger.warn({ err: err.message, code: err.errorCode, traceId, path: req.path }, 'Client error');
     }
 
-    res.status(err.statusCode).json(createErrorResponse(err.message, err.errors, traceId));
+    res.status(err.statusCode).json(createErrorResponse(err.message, err.errors, traceId, err.errorCode));
     return;
   }
 
   // Handle SyntaxError (e.g. malformed JSON in request body)
   if (err instanceof SyntaxError && 'status' in err && (err as any).status === 400) {
     res.status(400).json(
-      createErrorResponse('Malformed JSON in request body', [{ code: 'INVALID_JSON', message: err.message }], traceId)
+      createErrorResponse('Malformed JSON in request body', [{ code: 'INVALID_JSON', message: err.message }], traceId, 'INVALID_JSON')
     );
     return;
   }
@@ -38,7 +38,8 @@ export function errorHandler(
     createErrorResponse(
       'An unexpected internal server error occurred',
       [{ code: 'INTERNAL_SERVER_ERROR', message: 'An unexpected internal server error occurred' }],
-      traceId
+      traceId,
+      'INTERNAL_SERVER_ERROR'
     )
   );
 }

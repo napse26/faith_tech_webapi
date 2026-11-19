@@ -6,13 +6,15 @@ import {
   initiateAuthSchema,
   verifyAuthOtpSchema,
   resendAuthOtpSchema,
-  refreshTokenSchema
+  refreshTokenSchema,
+  changeMobileSendOtpSchema,
+  changeMobileVerifyOtpSchema
 } from './auth.schemas';
 import { otpInitiateLimiter, otpVerifyLimiter } from '../../common/middleware/rate-limiter';
 
 const router = Router();
 
-// Unified OTP Authentication (Single flow for both existing and new users)
+// 7.1 Send OTP (Universal login/registration OTP trigger)
 router.post(
   '/send-otp',
   otpInitiateLimiter,
@@ -26,6 +28,7 @@ router.post(
   authController.sendOtp
 );
 
+// 7.2 Verify OTP (Atomic verification, customer creation if new, token issuance)
 router.post(
   '/verify-otp',
   otpVerifyLimiter,
@@ -39,52 +42,82 @@ router.post(
   authController.verifyOtp
 );
 
-// Explicit Signup
+// 7.3 Resend OTP
 router.post(
-  '/signup/initiate',
+  '/resend-otp',
   otpInitiateLimiter,
-  validate({ body: initiateAuthSchema }),
-  authController.initiateSignup
+  validate({ body: resendAuthOtpSchema }),
+  authController.resendOtp
 );
-
-router.post(
-  '/signup/verify-otp',
-  otpVerifyLimiter,
-  validate({ body: verifyAuthOtpSchema }),
-  authController.verifySignupOtp
-);
-
-// Login
-router.post(
-  '/login/initiate',
-  otpInitiateLimiter,
-  validate({ body: initiateAuthSchema }),
-  authController.initiateLogin
-);
-
-router.post(
-  '/login/verify-otp',
-  otpVerifyLimiter,
-  validate({ body: verifyAuthOtpSchema }),
-  authController.verifyLoginOtp
-);
-
-// Resend OTP
 router.post(
   '/otp/resend',
+  otpInitiateLimiter,
   validate({ body: resendAuthOtpSchema }),
   authController.resendOtp
 );
 
-// Refresh Token
+// 7.4 Refresh Token (Opaque token rotation with reuse detection)
+router.post(
+  '/refresh-token',
+  validate({ body: refreshTokenSchema }),
+  authController.refreshToken
+);
 router.post(
   '/token/refresh',
   validate({ body: refreshTokenSchema }),
   authController.refreshToken
 );
 
-// Logout
-router.post('/logout', authenticate, authController.logout);
-router.post('/logout-all', authenticate, authController.logoutAll);
+// 7.5 Logout current device session
+router.post(
+  '/logout',
+  authenticate,
+  authController.logout
+);
+
+// 7.6 Logout all devices
+router.post(
+  '/logout-all',
+  authenticate,
+  authController.logoutAll
+);
+
+// 7.7 Current User Profile
+router.get(
+  '/me',
+  authenticate,
+  authController.getMe
+);
+
+// 7.8 Active Sessions
+router.get(
+  '/sessions',
+  authenticate,
+  authController.getSessions
+);
+
+// 7.9 Revoke Selected Session
+router.delete(
+  '/sessions/:sessionId',
+  authenticate,
+  authController.revokeSession
+);
+
+// 7.10 Mobile Number Change
+router.post(
+  '/change-mobile/send-otp',
+  authenticate,
+  otpInitiateLimiter,
+  validate({ body: changeMobileSendOtpSchema }),
+  authController.changeMobileSendOtp
+);
+
+router.post(
+  '/change-mobile/verify-otp',
+  authenticate,
+  otpVerifyLimiter,
+  validate({ body: changeMobileVerifyOtpSchema }),
+  authController.changeMobileVerifyOtp
+);
 
 export const authRoutes = router;

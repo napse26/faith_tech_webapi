@@ -1,45 +1,46 @@
-import { OtpPurpose, Prisma } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { NotFoundError, ConflictError, BadRequestError } from '../../common/errors/app-error';
 import { UserProfileDto, UpdateProfileInput } from './profile.types';
 import { otpService } from '../otp/otp.service';
 import { auditService } from '../audit/audit.service';
-import { v4 as uuidv4 } from 'uuid';
 
 export class ProfileService {
   /**
    * Retrieves the current user's profile.
    */
   async getProfile(userId: string): Promise<UserProfileDto> {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { profile: true }
+    const parsedUserId = BigInt(userId);
+    const user = await prisma.users.findUnique({
+      where: { user_id: parsedUserId },
+      include: {
+        customer_details_customer_details_user_idTousers: true
+      }
     });
 
     if (!user) {
       throw new NotFoundError('User profile not found', 'USER_NOT_FOUND');
     }
 
-    const profile = user.profile;
+    const customer = user.customer_details_customer_details_user_idTousers;
 
     return {
-      userId: user.id,
-      mobileNumber: user.mobileNumber,
-      email: user.email,
-      isMobileVerified: user.isMobileVerified,
-      isEmailVerified: user.isEmailVerified,
-      fullName: profile?.fullName ?? null,
-      displayName: profile?.displayName ?? null,
-      gender: profile?.gender ?? null,
-      avatarUrl: profile?.avatarUrl ?? null,
-      preferredLanguage: profile?.preferredLanguage ?? 'en',
-      country: profile?.country ?? null,
-      state: profile?.state ?? null,
-      city: profile?.city ?? null,
-      timezone: profile?.timezone ?? 'Asia/Kolkata',
-      isProfileComplete: profile?.isProfileComplete ?? false,
-      createdAt: user.createdAt,
-      updatedAt: profile?.updatedAt ?? user.updatedAt
+      userId: user.user_id.toString(),
+      mobileNumber: user.mobile_no,
+      email: user.email || null,
+      isMobileVerified: user.is_mobile_verified ?? true,
+      isEmailVerified: user.is_email_verified ?? false,
+      fullName: user.full_name || customer?.first_name || null,
+      displayName: customer?.first_name ? `${customer.first_name} ${customer.last_name || ''}`.trim() : user.full_name || null,
+      gender: customer?.gender || user.gender || null,
+      avatarUrl: customer?.profile_image || user.profile_image || null,
+      preferredLanguage: customer?.preferred_language || 'en',
+      country: user.country_code || null,
+      state: null,
+      city: customer?.place_of_birth || null,
+      timezone: 'Asia/Kolkata',
+      isProfileComplete: !!(user.full_name || customer?.first_name),
+      createdAt: user.created_on,
+      updatedAt: user.updated_on
     };
   }
 
@@ -47,135 +48,146 @@ export class ProfileService {
    * Updates only permitted profile fields using strict allowlist.
    */
   async updateProfile(userId: string, input: UpdateProfileInput): Promise<UserProfileDto> {
-    const isComplete = Boolean(
-      (input.fullName !== undefined ? input.fullName : true) &&
-      (input.gender !== undefined ? input.gender : true) &&
-      (input.city !== undefined ? input.city : true)
-    );
+    const parsedUserId = BigInt(userId);
 
-    const updatedProfile = await prisma.userProfile.upsert({
-      where: { userId },
-      create: {
-        userId,
-        fullName: input.fullName,
-        displayName: input.displayName,
-        gender: input.gender,
-        avatarUrl: input.avatarUrl,
-        preferredLanguage: input.preferredLanguage || 'en',
-        country: input.country,
-        state: input.state,
-        city: input.city,
-        timezone: input.timezone || 'Asia/Kolkata',
-        isProfileComplete: isComplete
-      },
-      update: {
-        ...(input.fullName !== undefined && { fullName: input.fullName }),
-        ...(input.displayName !== undefined && { displayName: input.displayName }),
-        ...(input.gender !== undefined && { gender: input.gender }),
-        ...(input.avatarUrl !== undefined && { avatarUrl: input.avatarUrl }),
-        ...(input.preferredLanguage !== undefined && { preferredLanguage: input.preferredLanguage }),
-        ...(input.country !== undefined && { country: input.country }),
-        ...(input.state !== undefined && { state: input.state }),
-        ...(input.city !== undefined && { city: input.city }),
-        ...(input.timezone !== undefined && { timezone: input.timezone }),
-        isProfileComplete: isComplete
-      }
+    const user = await prisma.users.findUnique({
+      where: { user_id: parsedUserId },
+      include: { customer_details_customer_details_user_idTousers: true }
     });
 
-    await auditService.log({
-      userId,
-      action: 'PROFILE_UPDATED',
-      resource: 'PROFILE',
-      metadata: { fieldsUpdated: Object.keys(input) }
+    if (!user) {
+      throw new NotFoundError('User not found', 'USER_NOT_FOUND');
+    }
+
+    const names = input.fullName ? input.fullName.split(' ') : [];
+    const firstName = names[0] || undefined;
+    const lastName = names.slice(1).join(' ') || undefined;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.users.update({
+        where: { user_id: parsedUserId },
+        data: {
+          full_name: input.fullName !== undefined ? input.fullName : undefined,
+          gender: input.gender !== undefined ? input.gender : undefined,
+          profile_image: input.avatarUrl !== undefined ? input.avatarUrl : undefined,
+          updated_on: new Date()
+        }
+      });
+
+      await tx.customer_details.upsert({
+        where: { user_id: parsedUserId },
+        create: {
+          user_id: parsedUserId,
+          first_name: firstName,
+          last_name: lastName,
+          gender: input.gender !== undefined ? input.gender : undefined,
+          preferred_language: input.preferredLanguage !== undefined ? input.preferredLanguage : undefined,
+          profile_image: input.avatarUrl !== undefined ? input.avatarUrl : undefined,
+          place_of_birth: input.city !== undefined ? input.city : undefined,
+          updated_on: new Date()
+        },
+        update: {
+          first_name: firstName,
+          last_name: lastName,
+          gender: input.gender !== undefined ? input.gender : undefined,
+          preferred_language: input.preferredLanguage !== undefined ? input.preferredLanguage : undefined,
+          profile_image: input.avatarUrl !== undefined ? input.avatarUrl : undefined,
+          place_of_birth: input.city !== undefined ? input.city : undefined,
+          updated_on: new Date()
+        }
+      });
+
+      await auditService.log(
+        {
+          userId: parsedUserId,
+          phoneNumber: user.mobile_no,
+          eventType: 'PROFILE_UPDATED',
+          status: 'SUCCESS'
+        },
+        tx
+      );
     });
 
     return this.getProfile(userId);
   }
 
   /**
-   * Pre-generates a secure signed profile photo upload reference.
+   * Initiates email verification flow via OTP.
    */
-  async initiateProfilePhotoUpload(
-    userId: string,
-    fileType: string,
-    fileSize: number
-  ) {
-    const extension = fileType.split('/')[1] || 'jpg';
-    const uploadId = uuidv4();
-    const fileName = `avatars/${userId}/${uploadId}.${extension}`;
-    const uploadUrl = `https://storage.faithtech.internal/uploads/${fileName}?uploadToken=${uuidv4()}`;
-    const publicUrl = `https://cdn.faithtech.internal/${fileName}`;
-
-    // Also update profile avatarUrl
-    await prisma.userProfile.updateMany({
-      where: { userId },
-      data: { avatarUrl: publicUrl }
-    });
-
-    return {
-      uploadUrl,
-      publicUrl,
-      fileName,
-      expiresIn: 300 // 5 minutes to complete upload
-    };
-  }
-
-  /**
-   * Initiates email verification flow.
-   */
-  async initiateEmailVerification(userId: string, email: string) {
-    const normalizedEmail = email.toLowerCase().trim();
-
-    // Check if email already claimed by another user
-    const existing = await prisma.user.findFirst({
-      where: {
-        email: normalizedEmail,
-        id: { not: userId }
-      }
+  async initiateEmailUpdate(userId: string, newEmail: string): Promise<{ challengeId: string }> {
+    const parsedUserId = BigInt(userId);
+    const existing = await prisma.users.findFirst({
+      where: { email: newEmail, NOT: { user_id: parsedUserId } }
     });
 
     if (existing) {
-      throw new ConflictError('Email is already registered with another account', 'EMAIL_ALREADY_EXISTS');
+      throw new ConflictError('Email is already registered to another account', 'EMAIL_IN_USE');
     }
 
-    return otpService.initiateChallenge(normalizedEmail, OtpPurpose.EMAIL_VERIFICATION, userId);
+    const challenge = await otpService.initiateChallenge(newEmail, 'EMAIL_VERIFICATION');
+
+    return { challengeId: challenge.challengeId };
   }
 
   /**
-   * Confirms email verification with challenge code.
+   * Verifies email change challenge and commits update.
    */
-  async confirmEmailVerification(userId: string, challengeId: string, otp: string) {
-    return prisma.$transaction(async (tx) => {
+  async verifyEmailUpdate(userId: string, challengeId: string, otp: string): Promise<UserProfileDto> {
+    const parsedUserId = BigInt(userId);
+    const result = await prisma.$transaction(async (tx) => {
       const verification = await otpService.verifyChallenge(
         challengeId,
         otp,
-        OtpPurpose.EMAIL_VERIFICATION,
+        'EMAIL_VERIFICATION',
         tx
       );
 
-      const updatedUser = await tx.user.update({
-        where: { id: userId },
+      const existing = await tx.users.findFirst({
+        where: { email: verification.phoneNumber, NOT: { user_id: parsedUserId } }
+      });
+
+      if (existing) {
+        throw new ConflictError('Email is already registered to another account', 'EMAIL_IN_USE');
+      }
+
+      await tx.users.update({
+        where: { user_id: parsedUserId },
         data: {
-          email: verification.destination,
-          isEmailVerified: true
+          email: verification.phoneNumber,
+          is_email_verified: true,
+          updated_on: new Date()
         }
       });
 
       await auditService.log(
         {
-          userId,
-          action: 'EMAIL_VERIFIED',
-          resource: 'USER',
-          metadata: { email: verification.destination }
+          userId: parsedUserId,
+          eventType: 'EMAIL_UPDATED',
+          status: 'SUCCESS'
         },
         tx
       );
 
-      return {
-        email: updatedUser.email,
-        isEmailVerified: updatedUser.isEmailVerified
-      };
+      return verification.phoneNumber;
     });
+
+    return this.getProfile(userId);
+  }
+
+  async initiateProfilePhotoUpload(userId: string, fileType: string, fileSize: number) {
+    return {
+      uploadUrl: `https://storage.supabase.co/profiles/${userId}/avatar.jpg`,
+      cdnUrl: `https://storage.supabase.co/profiles/${userId}/avatar.jpg`,
+      expiresIn: 3600
+    };
+  }
+
+  async initiateEmailVerification(userId: string, email: string) {
+    return this.initiateEmailUpdate(userId, email);
+  }
+
+  async confirmEmailVerification(userId: string, challengeId: string, otp: string) {
+    return this.verifyEmailUpdate(userId, challengeId, otp);
   }
 }
 

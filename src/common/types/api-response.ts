@@ -4,12 +4,18 @@ export interface ApiFieldError {
   message: string;
 }
 
+export interface ApiErrorDetail {
+  code: string;
+  details: unknown | null;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
   data: T | null;
+  error?: ApiErrorDetail;
   errors: ApiFieldError[];
-  traceId: string;
+  traceId?: string;
 }
 
 export function createSuccessResponse<T>(
@@ -29,12 +35,18 @@ export function createSuccessResponse<T>(
 export function createErrorResponse(
   message = 'Request could not be processed',
   errors: ApiFieldError[] = [],
-  traceId = ''
+  traceId = '',
+  errorCode = 'ERROR'
 ): ApiResponse<null> {
+  const primaryCode = errors.length > 0 && errors[0].code ? errors[0].code : errorCode;
   return {
     success: false,
     message,
     data: null,
+    error: {
+      code: primaryCode,
+      details: errors.length > 1 ? errors : null
+    },
     errors,
     traceId
   };

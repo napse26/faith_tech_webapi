@@ -1,4 +1,4 @@
-import { PrismaClient, UserStatus, Gender, TimeAccuracy } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -6,83 +6,42 @@ async function main() {
   console.log('🌱 Starting safe development database seeding...');
 
   // Upsert test user 1
-  const user1 = await prisma.user.upsert({
-    where: { mobileNumber: '+919999900001' },
-    update: {},
-    create: {
-      mobileNumber: '+919999900001',
-      countryCode: '+91',
-      email: 'test.user1@example.com',
-      isMobileVerified: true,
-      isEmailVerified: true,
-      status: UserStatus.ACTIVE,
-      profile: {
-        create: {
-          fullName: 'Test User One',
-          displayName: 'AstroTester',
-          gender: Gender.FEMALE,
-          preferredLanguage: 'en',
-          country: 'India',
-          state: 'Delhi',
-          city: 'New Delhi',
-          timezone: 'Asia/Kolkata',
-          isProfileComplete: true
-        }
-      },
-      birthDetails: {
-        create: {
-          birthDate: '1992-04-12',
-          birthTime: '10:45:00',
-          timeAccuracy: TimeAccuracy.EXACT,
-          birthPlaceName: 'New Delhi, India',
-          latitude: 28.6139,
-          longitude: 77.209,
-          timezone: 'Asia/Kolkata'
-        }
+  const mobile1 = '+919999900001';
+  let user1 = await prisma.users.findUnique({ where: { mobile_no: mobile1 } });
+  if (!user1) {
+    user1 = await prisma.users.create({
+      data: {
+        mobile_no: mobile1,
+        country_code: '+91',
+        email: 'test.user1@example.com',
+        full_name: 'Test Customer One',
+        is_mobile_verified: true,
+        is_email_verified: true,
+        status: 'ACTIVE',
+        is_active: true
       }
-    }
-  });
+    });
 
-  console.log(`✅ Seeded test user 1: ${user1.mobileNumber} (ID: ${user1.id})`);
-
-  // Upsert test user 2 (approximate birth time)
-  const user2 = await prisma.user.upsert({
-    where: { mobileNumber: '+919999900002' },
-    update: {},
-    create: {
-      mobileNumber: '+919999900002',
-      countryCode: '+91',
-      email: 'test.user2@example.com',
-      isMobileVerified: true,
-      status: UserStatus.ACTIVE,
-      profile: {
-        create: {
-          fullName: 'Test User Two',
-          displayName: 'Stargazer',
-          gender: Gender.MALE,
-          preferredLanguage: 'hi',
-          country: 'India',
-          state: 'Maharashtra',
-          city: 'Mumbai',
-          timezone: 'Asia/Kolkata',
-          isProfileComplete: true
-        }
-      },
-      birthDetails: {
-        create: {
-          birthDate: '1998-11-20',
-          birthTime: null,
-          timeAccuracy: TimeAccuracy.UNKNOWN,
-          birthPlaceName: 'Mumbai, India',
-          latitude: 19.076,
-          longitude: 72.8777,
-          timezone: 'Asia/Kolkata'
-        }
+    await prisma.user_roles.create({
+      data: {
+        user_id: user1.user_id,
+        role_id: 1 // CUSTOMER
       }
-    }
-  });
+    });
 
-  console.log(`✅ Seeded test user 2: ${user2.mobileNumber} (ID: ${user2.id})`);
+    await prisma.customer_details.create({
+      data: {
+        user_id: user1.user_id,
+        first_name: 'Test',
+        last_name: 'Customer One',
+        gender: 'FEMALE',
+        preferred_language: 'en',
+        place_of_birth: 'New Delhi'
+      }
+    });
+  }
+
+  console.log(`✅ Seeded test user 1: ${user1.mobile_no} (ID: ${user1.user_id})`);
   console.log('🌱 Seeding completed successfully.');
 }
 

@@ -1,107 +1,116 @@
-import { Prisma, OtpStatus, OtpPurpose, OtpChallenge } from '@prisma/client';
+import { Prisma, otp_verification } from '@prisma/client';
 import { prisma } from '../../config/database';
 
 export class OtpRepository {
   async supersedeActiveChallenges(
-    destination: string,
-    purpose: OtpPurpose,
+    phoneNumber: string,
+    purpose: string,
     tx: Prisma.TransactionClient = prisma
   ): Promise<void> {
-    await tx.otpChallenge.updateMany({
+    await tx.otp_verification.updateMany({
       where: {
-        destination,
+        phone_number: phoneNumber,
         purpose,
-        status: OtpStatus.PENDING
+        status: 'PENDING'
       },
       data: {
-        status: OtpStatus.SUPERSEDED
+        status: 'EXPIRED',
+        updated_at: new Date()
       }
     });
   }
 
   async createChallenge(
     data: {
-      userId?: string;
-      purpose: OtpPurpose;
-      destination: string;
+      phoneNumber: string;
+      purpose: string;
+      channel?: string;
       otpHash: string;
-      salt: string;
       expiresAt: Date;
-      resendAvailableAt: Date;
     },
     tx: Prisma.TransactionClient = prisma
-  ): Promise<OtpChallenge> {
-    return tx.otpChallenge.create({
+  ): Promise<otp_verification> {
+    return tx.otp_verification.create({
       data: {
-        userId: data.userId || null,
+        phone_number: data.phoneNumber,
         purpose: data.purpose,
-        destination: data.destination,
-        otpHash: data.otpHash,
-        salt: data.salt,
-        status: OtpStatus.PENDING,
-        attemptsCount: 0,
-        maxAttempts: 5,
-        resendCount: 0,
-        expiresAt: data.expiresAt,
-        resendAvailableAt: data.resendAvailableAt
+        channel: data.channel || 'SMS',
+        otp_hash: data.otpHash,
+        status: 'PENDING',
+        attempts: 0,
+        resend_count: 0,
+        expires_at: data.expiresAt,
+        created_at: new Date(),
+        updated_at: new Date()
       }
     });
   }
 
-  async findById(id: string, tx: Prisma.TransactionClient = prisma): Promise<OtpChallenge | null> {
-    return tx.otpChallenge.findUnique({
-      where: { id }
+  async findByChallengeId(
+    challengeId: string,
+    tx: Prisma.TransactionClient = prisma
+  ): Promise<otp_verification | null> {
+    return tx.otp_verification.findUnique({
+      where: { challenge_id: challengeId }
     });
   }
 
   async incrementAttempts(
-    id: string,
+    challengeId: string,
+    maxAttempts = 5,
     tx: Prisma.TransactionClient = prisma
-  ): Promise<OtpChallenge> {
-    const challenge = await tx.otpChallenge.update({
-      where: { id },
+  ): Promise<otp_verification> {
+    const record = await tx.otp_verification.update({
+      where: { challenge_id: challengeId },
       data: {
-        attemptsCount: { increment: 1 }
+        attempts: { increment: 1 },
+        updated_at: new Date()
       }
     });
 
-    if (challenge.attemptsCount >= challenge.maxAttempts) {
-      await tx.otpChallenge.update({
-        where: { id },
-        data: { status: OtpStatus.MAX_ATTEMPTS_EXCEEDED }
+    if (record.attempts >= maxAttempts) {
+      return tx.otp_verification.update({
+        where: { challenge_id: challengeId },
+        data: {
+          status: 'LOCKED',
+          updated_at: new Date()
+        }
       });
     }
 
-    return challenge;
+    return record;
   }
 
-  async markVerified(id: string, tx: Prisma.TransactionClient = prisma): Promise<OtpChallenge> {
-    return tx.otpChallenge.update({
-      where: { id },
+  async markVerified(
+    challengeId: string,
+    tx: Prisma.TransactionClient = prisma
+  ): Promise<otp_verification> {
+    const now = new Date();
+    return tx.otp_verification.update({
+      where: { challenge_id: challengeId },
       data: {
-        status: OtpStatus.VERIFIED,
-        consumedAt: new Date()
+        status: 'CONSUMED',
+        verified_at: now,
+        consumed_at: now,
+        updated_at: now
       }
     });
   }
 
   async markResent(
-    id: string,
+    challengeId: string,
     otpHash: string,
-    salt: string,
     expiresAt: Date,
-    resendAvailableAt: Date,
     tx: Prisma.TransactionClient = prisma
-  ): Promise<OtpChallenge> {
-    return tx.otpChallenge.update({
-      where: { id },
+  ): Promise<otp_verification> {
+    return tx.otp_verification.update({
+      where: { challenge_id: challengeId },
       data: {
-        otpHash,
-        salt,
-        attemptsCount: 0,
-        resendCount: { increment: 1 },
-        expiresAt,
-        resendAvailableAt
+        otp_hash: otpHash,
+        attempts: 0,
+        resend_count: { increment: 1 },
+        expires_at: expiresAt,
+        updated_at: new Date()
       }
     });
   }

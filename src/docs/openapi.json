@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "FaithTech Astrology Mobile App Backend API",
+    "title": "DharmaDarshan - OTP Authentication & Identity Management API",
     "version": "1.0.0",
-    "description": "Production-ready, enterprise-grade REST API backend for Astrology Mobile Application. Includes OTP authentication, JWT session lifecycle, user profile management, and astrology birth details."
+    "description": "Production-ready, developer-ready REST API for DharmaDarshan mobile OTP authentication, multi-device session management, token lifecycle, customer registration, and profile management. Powered by Node.js, Express, Prisma, and PostgreSQL (Supabase)."
   },
   "servers": [
     {
@@ -26,6 +26,13 @@
           "success": { "type": "boolean" },
           "message": { "type": "string" },
           "data": { "type": "object", "nullable": true },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string" },
+              "details": { "nullable": true }
+            }
+          },
           "errors": {
             "type": "array",
             "items": {
@@ -40,23 +47,65 @@
           "traceId": { "type": "string" }
         }
       },
-      "InitiateAuthRequest": {
+      "SendOtpRequest": {
         "type": "object",
-        "required": ["mobileNumber"],
+        "required": ["phoneNumber"],
         "properties": {
-          "mobileNumber": { "type": "string", "example": "9876543210" },
-          "countryCode": { "type": "string", "example": "+91", "default": "+91" }
+          "phoneNumber": { "type": "string", "example": "+919876543210" },
+          "countryCode": { "type": "string", "example": "+91", "default": "+91" },
+          "purpose": { "type": "string", "enum": ["LOGIN", "REGISTER", "CHANGE_PHONE", "ACCOUNT_RECOVERY"], "default": "LOGIN" },
+          "channel": { "type": "string", "enum": ["SMS", "WHATSAPP"], "default": "SMS" }
         }
       },
-      "VerifyAuthOtpRequest": {
+      "SendOtpResponse": {
+        "type": "object",
+        "properties": {
+          "challengeId": { "type": "string", "format": "uuid" },
+          "maskedPhoneNumber": { "type": "string", "example": "+91******3210" },
+          "otpLength": { "type": "integer", "example": 4 },
+          "expiresIn": { "type": "integer", "example": 300 },
+          "resendAfter": { "type": "integer", "example": 90 },
+          "sampleOtp": { "type": "string", "example": "1234" }
+        }
+      },
+      "VerifyOtpRequest": {
         "type": "object",
         "required": ["challengeId", "otp"],
         "properties": {
           "challengeId": { "type": "string", "format": "uuid" },
-          "otp": { "type": "string", "example": "748291" },
-          "deviceId": { "type": "string" },
-          "deviceName": { "type": "string" },
-          "platform": { "type": "string", "enum": ["ANDROID", "IOS", "WEB", "UNKNOWN"] }
+          "otp": { "type": "string", "example": "1234" },
+          "device": {
+            "type": "object",
+            "properties": {
+              "deviceId": { "type": "string", "example": "device-123" },
+              "deviceName": { "type": "string", "example": "Samsung Galaxy S22" },
+              "platform": { "type": "string", "enum": ["ANDROID", "IOS", "WEB"], "example": "ANDROID" },
+              "appVersion": { "type": "string", "example": "1.0.0" }
+            }
+          }
+        }
+      },
+      "VerifyOtpResponse": {
+        "type": "object",
+        "properties": {
+          "isNewUser": { "type": "boolean", "example": true },
+          "isProfileComplete": { "type": "boolean", "example": false },
+          "accessToken": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+          "refreshToken": { "type": "string", "example": "b188c634c062c3e41b2c4e..." },
+          "tokenType": { "type": "string", "example": "Bearer" },
+          "expiresIn": { "type": "integer", "example": 900 },
+          "user": {
+            "type": "object",
+            "properties": {
+              "customerId": { "type": "integer", "example": 101 },
+              "name": { "type": "string", "nullable": true, "example": null },
+              "phoneNumber": { "type": "string", "example": "+919876543210" },
+              "email": { "type": "string", "nullable": true, "example": null },
+              "role": { "type": "string", "example": "CUSTOMER" },
+              "status": { "type": "string", "example": "ACTIVE" },
+              "isMobileVerified": { "type": "boolean", "example": true }
+            }
+          }
         }
       },
       "ResendOtpRequest": {
@@ -70,34 +119,45 @@
         "type": "object",
         "required": ["refreshToken"],
         "properties": {
-          "refreshToken": { "type": "string" }
+          "refreshToken": { "type": "string", "example": "b188c634c062c3e41b2c4e..." }
         }
       },
-      "UpdateProfileRequest": {
+      "RefreshTokenResponse": {
         "type": "object",
         "properties": {
-          "fullName": { "type": "string", "example": "Aarav Sharma" },
-          "displayName": { "type": "string", "example": "Aarav" },
-          "gender": { "type": "string", "enum": ["MALE", "FEMALE", "NON_BINARY", "OTHER", "PREFER_NOT_TO_SAY"] },
-          "avatarUrl": { "type": "string", "format": "uri" },
-          "preferredLanguage": { "type": "string", "example": "en" },
-          "country": { "type": "string", "example": "India" },
-          "state": { "type": "string", "example": "Maharashtra" },
-          "city": { "type": "string", "example": "Mumbai" },
-          "timezone": { "type": "string", "example": "Asia/Kolkata" }
+          "accessToken": { "type": "string" },
+          "refreshToken": { "type": "string" },
+          "tokenType": { "type": "string", "example": "Bearer" },
+          "expiresIn": { "type": "integer", "example": 900 }
         }
       },
-      "UpsertBirthDetailsRequest": {
+      "UserSessionDto": {
         "type": "object",
-        "required": ["birthDate", "timeAccuracy", "birthPlaceName", "latitude", "longitude", "timezone"],
         "properties": {
-          "birthDate": { "type": "string", "example": "1995-08-15" },
-          "birthTime": { "type": "string", "example": "14:30:00", "nullable": true },
-          "timeAccuracy": { "type": "string", "enum": ["EXACT", "APPROXIMATE", "UNKNOWN"] },
-          "birthPlaceName": { "type": "string", "example": "Mumbai, India" },
-          "latitude": { "type": "number", "example": 19.076 },
-          "longitude": { "type": "number", "example": 72.8777 },
-          "timezone": { "type": "string", "example": "Asia/Kolkata" }
+          "sessionId": { "type": "string", "format": "uuid" },
+          "deviceId": { "type": "string", "nullable": true },
+          "deviceType": { "type": "string", "nullable": true },
+          "deviceName": { "type": "string", "nullable": true },
+          "ipAddress": { "type": "string", "nullable": true },
+          "lastActiveAt": { "type": "string", "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "isCurrent": { "type": "boolean" }
+        }
+      },
+      "ChangeMobileSendOtpRequest": {
+        "type": "object",
+        "required": ["newPhoneNumber"],
+        "properties": {
+          "newPhoneNumber": { "type": "string", "example": "+919876543211" },
+          "countryCode": { "type": "string", "example": "+91", "default": "+91" }
+        }
+      },
+      "ChangeMobileVerifyOtpRequest": {
+        "type": "object",
+        "required": ["challengeId", "otp"],
+        "properties": {
+          "challengeId": { "type": "string", "format": "uuid" },
+          "otp": { "type": "string", "example": "1234" }
         }
       }
     }
@@ -105,122 +165,76 @@
   "paths": {
     "/api/v1/auth/send-otp": {
       "post": {
-        "summary": "Unified OTP dispatch for mobile login/signup",
-        "description": "User enters mobile number and submits. Dispatches OTP via SMS adapter. In development mode, returns sampleOtp: '123456'.",
         "tags": ["Authentication"],
+        "summary": "7.1 Send OTP (Login / Registration)",
+        "description": "Dispatches a 4-digit OTP challenge to the provided phone number. If customer exists, initiates login; if not, prepares automatic new customer registration. In dev mode, includes sampleOtp: '1234'.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/InitiateAuthRequest" }
+              "schema": { "$ref": "#/components/schemas/SendOtpRequest" }
             }
           }
         },
         "responses": {
-          "200": { "description": "OTP challenge created and dispatched" },
-          "400": { "description": "Invalid mobile number format" },
-          "429": { "description": "Rate limit exceeded" }
+          "200": {
+            "description": "OTP sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/SendOtpResponse" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid phone number format (INVALID_PHONE_NUMBER)" },
+          "429": { "description": "Rate limit exceeded (RATE_LIMIT_EXCEEDED)" }
         }
       }
     },
     "/api/v1/auth/verify-otp": {
       "post": {
-        "summary": "Unified OTP verification for mobile login/signup",
-        "description": "Verifies OTP (accepts development sample OTP '123456'). If user already exists, verifies OTP and issues tokens (isNewUser: false). If user does not exist, registers new user and issues tokens (isNewUser: true).",
         "tags": ["Authentication"],
+        "summary": "7.2 Verify OTP (Atomic Login / Registration)",
+        "description": "Verifies 4-digit OTP. If customer already exists, checks account status (ACTIVE/BLOCKED/SUSPENDED) and logs in (`isNewUser: false`). If customer does not exist, registers new customer, creates `customer_details`, assigns `CUSTOMER` role, and issues tokens (`isNewUser: true`).",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/VerifyAuthOtpRequest" }
+              "schema": { "$ref": "#/components/schemas/VerifyOtpRequest" }
             }
           }
         },
         "responses": {
-          "200": { "description": "Existing user authenticated successfully (isNewUser: false)" },
-          "201": { "description": "New user registered and authenticated successfully (isNewUser: true)" },
-          "400": { "description": "Invalid or expired OTP" }
-        }
-      }
-    },
-    "/api/v1/auth/signup/initiate": {
-      "post": {
-        "summary": "Initiate mobile signup OTP flow",
-        "tags": ["Authentication"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/InitiateAuthRequest" }
+          "200": {
+            "description": "Login/Registration successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/VerifyOtpResponse" } } }
+                  ]
+                }
+              }
             }
-          }
-        },
-        "responses": {
-          "200": { "description": "Verification code dispatched" },
-          "400": { "description": "Invalid input" },
-          "429": { "description": "Rate limit exceeded" }
+          },
+          "400": { "description": "Invalid OTP (INVALID_OTP) or Expired OTP (OTP_EXPIRED)" },
+          "403": { "description": "Account suspended or blocked (ACCOUNT_BLOCKED / ACCOUNT_SUSPENDED)" },
+          "404": { "description": "Challenge not found (INVALID_CHALLENGE)" },
+          "409": { "description": "OTP already used (OTP_ALREADY_USED)" },
+          "429": { "description": "Max attempts exceeded (OTP_ATTEMPTS_EXCEEDED)" }
         }
       }
     },
-    "/api/v1/auth/signup/verify-otp": {
+    "/api/v1/auth/resend-otp": {
       "post": {
-        "summary": "Verify signup OTP and create account",
         "tags": ["Authentication"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/VerifyAuthOtpRequest" }
-            }
-          }
-        },
-        "responses": {
-          "201": { "description": "Account created and authenticated" },
-          "400": { "description": "Invalid or expired OTP" }
-        }
-      }
-    },
-    "/api/v1/auth/login/initiate": {
-      "post": {
-        "summary": "Initiate mobile login OTP flow",
-        "tags": ["Authentication"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/InitiateAuthRequest" }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "Login OTP dispatched" },
-          "400": { "description": "Invalid input" },
-          "429": { "description": "Rate limit exceeded" }
-        }
-      }
-    },
-    "/api/v1/auth/login/verify-otp": {
-      "post": {
-        "summary": "Verify login OTP and establish session",
-        "tags": ["Authentication"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/VerifyAuthOtpRequest" }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "Authenticated successfully" },
-          "400": { "description": "Invalid or expired OTP" }
-        }
-      }
-    },
-    "/api/v1/auth/otp/resend": {
-      "post": {
-        "summary": "Resend OTP challenge subject to cooldown",
-        "tags": ["Authentication"],
+        "summary": "7.3 Resend OTP",
+        "description": "Generates a replacement OTP challenge after verifying the 90-second resend cooldown has elapsed. Invalidates the previous OTP.",
         "requestBody": {
           "required": true,
           "content": {
@@ -230,15 +244,28 @@
           }
         },
         "responses": {
-          "200": { "description": "OTP resent" },
-          "400": { "description": "Cooldown active or limit exceeded" }
+          "200": {
+            "description": "OTP resent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/SendOtpResponse" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "429": { "description": "Resend cooldown active (RESEND_COOLDOWN_ACTIVE)" }
         }
       }
     },
-    "/api/v1/auth/token/refresh": {
+    "/api/v1/auth/refresh-token": {
       "post": {
-        "summary": "Rotate refresh token and issue new access token",
         "tags": ["Authentication"],
+        "summary": "7.4 Refresh Access Token",
+        "description": "Exchanges an opaque refresh token for a new access token and rotated refresh token. Detects token reuse and immediately revokes all sessions if reuse occurs.",
         "requestBody": {
           "required": true,
           "content": {
@@ -248,157 +275,149 @@
           }
         },
         "responses": {
-          "200": { "description": "Token rotated successfully" },
-          "401": { "description": "Invalid, expired, or compromised token" }
+          "200": {
+            "description": "Token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/RefreshTokenResponse" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "description": "Invalid refresh token or token reuse detected (TOKEN_REUSE_DETECTED / INVALID_REFRESH_TOKEN)" }
         }
       }
     },
     "/api/v1/auth/logout": {
       "post": {
-        "summary": "Logout current session",
         "tags": ["Authentication"],
+        "summary": "7.5 Logout",
         "security": [{ "BearerAuth": [] }],
+        "description": "Revokes current device session in user_sessions and invalidates associated refresh token.",
         "responses": {
-          "200": { "description": "Logged out successfully" }
+          "200": { "description": "Logged out successfully" },
+          "401": { "description": "Unauthorized / Session revoked" }
         }
       }
     },
     "/api/v1/auth/logout-all": {
       "post": {
-        "summary": "Revoke all active sessions on all devices",
         "tags": ["Authentication"],
+        "summary": "7.6 Logout All Devices",
         "security": [{ "BearerAuth": [] }],
+        "description": "Revokes all active sessions for the authenticated customer across all devices.",
         "responses": {
-          "200": { "description": "All sessions revoked" }
-        }
-      }
-    },
-    "/api/v1/users/me": {
-      "get": {
-        "summary": "Get authenticated user profile",
-        "tags": ["User Profile"],
-        "security": [{ "BearerAuth": [] }],
-        "responses": {
-          "200": { "description": "Profile retrieved" },
+          "200": { "description": "All devices logged out successfully" },
           "401": { "description": "Unauthorized" }
         }
-      },
-      "put": {
-        "summary": "Update user profile fields",
-        "tags": ["User Profile"],
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "7.7 Get Current User",
         "security": [{ "BearerAuth": [] }],
+        "description": "Returns current customer profile, verification status, and role.",
+        "responses": {
+          "200": { "description": "Customer profile retrieved successfully" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/auth/sessions": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "7.8 Active Sessions",
+        "security": [{ "BearerAuth": [] }],
+        "description": "Lists all active device sessions for current customer.",
+        "responses": {
+          "200": {
+            "description": "Active sessions retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/UserSessionDto" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/auth/sessions/{sessionId}": {
+      "delete": {
+        "tags": ["Authentication"],
+        "summary": "7.9 Revoke Selected Session",
+        "security": [{ "BearerAuth": [] }],
+        "description": "Revokes the specified session after verifying it belongs to the authenticated customer.",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Session revoked successfully" },
+          "403": { "description": "Cannot revoke session belonging to another user" },
+          "404": { "description": "Session not found" }
+        }
+      }
+    },
+    "/api/v1/auth/change-mobile/send-otp": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "7.10 Mobile Number Change - Step 1: Send OTP",
+        "security": [{ "BearerAuth": [] }],
+        "description": "Sends verification OTP to the new mobile number after ensuring it is not registered to another customer.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateProfileRequest" }
+              "schema": { "$ref": "#/components/schemas/ChangeMobileSendOtpRequest" }
             }
           }
         },
         "responses": {
-          "200": { "description": "Profile updated" }
+          "200": { "description": "OTP sent to new mobile number" },
+          "409": { "description": "Mobile number already registered to another account (PHONE_NUMBER_IN_USE)" }
         }
-      },
-      "patch": {
-        "summary": "Partially update user profile fields",
-        "tags": ["User Profile"],
+      }
+    },
+    "/api/v1/auth/change-mobile/verify-otp": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "7.10 Mobile Number Change - Step 2: Verify OTP",
         "security": [{ "BearerAuth": [] }],
+        "description": "Verifies OTP and transactionally updates customer registered mobile number.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateProfileRequest" }
+              "schema": { "$ref": "#/components/schemas/ChangeMobileVerifyOtpRequest" }
             }
           }
         },
         "responses": {
-          "200": { "description": "Profile updated" }
-        }
-      }
-    },
-    "/api/v1/users/me/birth-details": {
-      "get": {
-        "summary": "Get authenticated user astrology birth details",
-        "tags": ["Birth Details"],
-        "security": [{ "BearerAuth": [] }],
-        "responses": {
-          "200": { "description": "Birth details retrieved" },
-          "404": { "description": "Birth details not set" }
-        }
-      },
-      "put": {
-        "summary": "Create or update astrology birth details",
-        "tags": ["Birth Details"],
-        "security": [{ "BearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpsertBirthDetailsRequest" }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "Birth details saved" }
-        }
-      }
-    },
-    "/api/v1/users/me/mobile/change/initiate": {
-      "post": {
-        "summary": "Initiate mobile number change OTP",
-        "tags": ["User Lifecycle"],
-        "security": [{ "BearerAuth": [] }],
-        "responses": {
-          "200": { "description": "OTP sent to new mobile number" }
-        }
-      }
-    },
-    "/api/v1/users/me/mobile/change/confirm": {
-      "post": {
-        "summary": "Confirm mobile number change with OTP",
-        "tags": ["User Lifecycle"],
-        "security": [{ "BearerAuth": [] }],
-        "responses": {
-          "200": { "description": "Mobile number updated" }
-        }
-      }
-    },
-    "/api/v1/users/me/deactivate": {
-      "post": {
-        "summary": "Deactivate account and revoke all sessions",
-        "tags": ["User Lifecycle"],
-        "security": [{ "BearerAuth": [] }],
-        "responses": {
-          "200": { "description": "Account deactivated" }
-        }
-      }
-    },
-    "/api/v1/users/me/deletion-requests": {
-      "post": {
-        "summary": "Submit account deletion request with 30-day grace period",
-        "tags": ["User Lifecycle"],
-        "security": [{ "BearerAuth": [] }],
-        "responses": {
-          "200": { "description": "Deletion scheduled" }
-        }
-      }
-    },
-    "/health": {
-      "get": {
-        "summary": "Liveness health check",
-        "tags": ["System"],
-        "responses": {
-          "200": { "description": "Service is healthy" }
-        }
-      }
-    },
-    "/ready": {
-      "get": {
-        "summary": "Readiness probe including database connectivity",
-        "tags": ["System"],
-        "responses": {
-          "200": { "description": "Service and DB ready" },
-          "503": { "description": "Database not reachable" }
+          "200": { "description": "Mobile number updated successfully" },
+          "400": { "description": "Invalid OTP (INVALID_OTP)" },
+          "409": { "description": "Phone number conflict" }
         }
       }
     }
