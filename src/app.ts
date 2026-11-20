@@ -14,6 +14,7 @@ import { authRoutes } from './modules/auth/auth.routes';
 import { profileRoutes } from './modules/profiles/profile.routes';
 import { birthDetailsRoutes } from './modules/birth-details/birth-details.routes';
 import { userRoutes } from './modules/users/user.routes';
+import { customerRoutes } from './modules/customer/customer.routes';
 
 // Ensure BigInt values serialize cleanly to JSON
 (BigInt.prototype as any).toJSON = function () {
@@ -82,6 +83,7 @@ export function createApp(): Express {
 
   // Mount versioned module routes
   app.use('/api/v1/auth', authRoutes);
+  app.use('/api/v1/customers/me', customerRoutes);
   app.use('/api/v1/users', profileRoutes);
   app.use('/api/v1/users', birthDetailsRoutes);
   app.use('/api/v1/users', userRoutes);

@@ -228,6 +228,27 @@ model customer_details {
   users_customer_details_user_idTousers     users     @relation("customer_details_user_idTousers", fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
 }
 
+model customer_preferences {
+  id                              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                         BigInt    @unique
+  language                        String?   @default("en") @db.VarChar(20)
+  preferred_astrologer_language   String?   @default("en") @db.VarChar(20)
+  daily_horoscope_enabled         Boolean?  @default(true)
+  panchang_enabled                Boolean?  @default(true)
+  festival_alerts_enabled         Boolean?  @default(true)
+  preferred_zodiac_sign           String?   @default("ARIES") @db.VarChar(30)
+  push_enabled                    Boolean?  @default(true)
+  whatsapp_enabled                Boolean?  @default(false)
+  sms_enabled                     Boolean?  @default(true)
+  email_enabled                   Boolean?  @default(true)
+  marketing_notifications_enabled Boolean?  @default(false)
+  created_at                      DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at                      DateTime? @default(now()) @db.Timestamptz(6)
+  users                           users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_customer_pref_user_id")
+}
+
 model document_master {
   document_master_id       Int                        @id @default(autoincrement())
   document_name            String                     @db.VarChar(100)
@@ -250,17 +271,23 @@ model favorite_astrologers {
 }
 
 model kundli_profiles {
-  kundli_profile_id BigInt    @id @default(autoincrement())
-  user_id           BigInt
-  person_name       String    @db.VarChar(200)
-  gender            String?   @db.VarChar(10)
-  date_of_birth     DateTime? @db.Date
-  time_of_birth     DateTime? @db.Time(6)
-  place_of_birth    String?   @db.VarChar(200)
-  latitude          Decimal?  @db.Decimal(12, 8)
-  longitude         Decimal?  @db.Decimal(12, 8)
-  created_on        DateTime? @default(now()) @db.Timestamptz(6)
-  users             users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  kundli_profile_id   BigInt    @id @default(autoincrement())
+  user_id             BigInt
+  person_name         String    @db.VarChar(200)
+  gender              String?   @db.VarChar(10)
+  date_of_birth       DateTime? @db.Date
+  time_of_birth       DateTime? @db.Time(6)
+  place_of_birth      String?   @db.VarChar(200)
+  latitude            Decimal?  @db.Decimal(12, 8)
+  longitude           Decimal?  @db.Decimal(12, 8)
+  created_on          DateTime? @default(now()) @db.Timestamptz(6)
+  relationship        String?   @default("SELF") @db.VarChar(30)
+  birth_time_accuracy String?   @default("EXACT") @db.VarChar(20)
+  timezone            String?   @default("Asia/Kolkata") @db.VarChar(50)
+  is_default          Boolean?  @default(false)
+  is_active           Boolean?  @default(true)
+  updated_on          DateTime? @default(now()) @db.Timestamptz(6)
+  users               users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model languages {
@@ -555,6 +582,7 @@ model users {
   broadcast_participants                               broadcast_participants[]
   customer_details_customer_details_referred_byTousers customer_details[]                  @relation("customer_details_referred_byTousers")
   customer_details_customer_details_user_idTousers     customer_details?                   @relation("customer_details_user_idTousers")
+  customer_preferences                                 customer_preferences?
   document_master                                      document_master[]
   favorite_astrologers                                 favorite_astrologers[]
   kundli_profiles                                      kundli_profiles[]
