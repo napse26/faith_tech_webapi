@@ -12,7 +12,14 @@ import {
   initiateEmailVerificationSchema,
   verifyEmailVerificationSchema,
   updateCustomerPreferencesSchema,
-  updateNotificationPreferencesSchema
+  updateNotificationPreferencesSchema,
+  updateConsentsSchema,
+  acceptConsentSchema,
+  deactivateAccountSchema,
+  reactivateAccountSchema,
+  requestDeletionSchema,
+  createSupportTicketSchema,
+  addTicketMessageSchema
 } from './customer.schemas';
 import { otpInitiateLimiter, otpVerifyLimiter } from '../../common/middleware/rate-limiter';
 
@@ -110,5 +117,44 @@ router.delete('/devices/:deviceId', customerController.removeDevice);
 router.get('/security', customerController.getSecurityOverview);
 router.post('/security/logout', customerController.logout);
 router.post('/security/logout-all', customerController.logoutAll);
+
+// =========================================================================
+// 9. PRIVACY AND CONSENT (Phase 3)
+// =========================================================================
+router.get('/consents', customerController.getConsents);
+router.put('/consents', validate({ body: updateConsentsSchema }), customerController.updateConsents);
+router.post('/consents/accept', validate({ body: acceptConsentSchema }), customerController.acceptConsent);
+router.get('/privacy', customerController.getPrivacyOverview);
+
+// =========================================================================
+// 10. ACCOUNT LIFECYCLE (Phase 3)
+// =========================================================================
+router.post('/deactivation', validate({ body: deactivateAccountSchema }), customerController.deactivateAccount);
+router.post('/reactivation', validate({ body: reactivateAccountSchema }), customerController.reactivateAccount);
+router.post('/deletion-request', validate({ body: requestDeletionSchema }), customerController.requestAccountDeletion);
+router.get('/deletion-request', customerController.getDeletionRequest);
+router.delete('/deletion-request', customerController.cancelAccountDeletion);
+
+// =========================================================================
+// 11. SUPPORT REQUESTS (Phase 4)
+// =========================================================================
+router.get('/support-requests', customerController.listSupportTickets);
+router.post('/support-requests', validate({ body: createSupportTicketSchema }), customerController.createSupportTicket);
+router.get('/support-requests/:ticketId', customerController.getSupportTicket);
+router.post('/support-requests/:ticketId/messages', validate({ body: addTicketMessageSchema }), customerController.addTicketMessage);
+
+// =========================================================================
+// 12. ASTROLOGER FAVORITES & RECENTS (Phase 4)
+// =========================================================================
+router.get('/favorites/astrologers', customerController.listFavorites);
+router.post('/favorites/astrologers/:astrologerId', customerController.addFavorite);
+router.delete('/favorites/astrologers/:astrologerId', customerController.removeFavorite);
+router.get('/recent-astrologers', customerController.listRecentAstrologers);
+
+// =========================================================================
+// 13. CUSTOMER ACTIVITY (Phase 4)
+// =========================================================================
+router.get('/activity', customerController.getCustomerActivity);
+
 
 export const customerRoutes = router;

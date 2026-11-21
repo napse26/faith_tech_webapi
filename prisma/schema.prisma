@@ -144,6 +144,7 @@ model astrologers {
   astrologer_specializations        astrologer_specializations[]
   users                             users                               @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
   broadcasts                        broadcasts[]
+  customer_recent_astrologers       customer_recent_astrologers[]
   favorite_astrologers              favorite_astrologers[]
   reviews                           reviews[]
   user_consultation_sessions_detail user_consultation_sessions_detail[]
@@ -572,6 +573,7 @@ model users {
   created_on                                           DateTime?                           @default(now()) @db.Timestamp(6)
   updated_on                                           DateTime?                           @db.Timestamp(6)
   status                                               String?                             @default("ACTIVE") @db.VarChar(20)
+  account_deletion_requests                            account_deletion_requests[]
   admin_details                                        admin_details?
   appointments                                         appointments[]
   astrologer_kyc                                       astrologer_kyc[]
@@ -583,6 +585,7 @@ model users {
   customer_details_customer_details_referred_byTousers customer_details[]                  @relation("customer_details_referred_byTousers")
   customer_details_customer_details_user_idTousers     customer_details?                   @relation("customer_details_user_idTousers")
   customer_preferences                                 customer_preferences?
+  customer_recent_astrologers                          customer_recent_astrologers[]
   document_master                                      document_master[]
   favorite_astrologers                                 favorite_astrologers[]
   kundli_profiles                                      kundli_profiles[]
@@ -593,8 +596,10 @@ model users {
   service_checklist_master                             service_checklist_master[]
   service_master                                       service_master[]
   services_checklist_mapping_master                    services_checklist_mapping_master[]
+  support_tickets                                      support_tickets[]
   tbl_dms_category                                     tbl_dms_category[]
   tbl_dms_items                                        tbl_dms_items[]
+  user_consents                                        user_consents[]
   user_consultation_sessions_detail                    user_consultation_sessions_detail[]
   user_devices                                         user_devices[]
   user_login_history                                   user_login_history[]
@@ -624,4 +629,77 @@ model wallets {
   created_on          DateTime?             @default(now()) @db.Timestamptz(6)
   wallet_transactions wallet_transactions[]
   users               users                 @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model account_deletion_requests {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            BigInt
+  status             String    @default("PENDING") @db.VarChar(20)
+  reason             String?
+  scheduled_purge_at DateTime  @db.Timestamptz(6)
+  executed_at        DateTime? @db.Timestamptz(6)
+  created_at         DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime? @default(now()) @db.Timestamptz(6)
+  users              users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, status], map: "idx_del_req_user_status")
+}
+
+model customer_recent_astrologers {
+  id                 String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            BigInt
+  astrologer_id      BigInt
+  interaction_type   String?     @default("VIEW") @db.VarChar(30)
+  last_interacted_at DateTime?   @default(now()) @db.Timestamptz(6)
+  astrologers        astrologers @relation(fields: [astrologer_id], references: [astrologer_id], onDelete: Cascade, onUpdate: NoAction)
+  users              users       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, astrologer_id], map: "uq_recent_astrologers")
+  @@index([user_id, last_interacted_at(sort: Desc)], map: "idx_recent_astrologers")
+}
+
+model support_ticket_messages {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticket_id       String          @db.Uuid
+  sender_type     String          @default("CUSTOMER") @db.VarChar(20)
+  sender_id       BigInt?
+  message         String
+  is_internal     Boolean?        @default(false)
+  created_at      DateTime?       @default(now()) @db.Timestamptz(6)
+  support_tickets support_tickets @relation(fields: [ticket_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([ticket_id, created_at], map: "idx_ticket_msgs_ticket")
+}
+
+model support_tickets {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticket_number           String                    @unique @db.VarChar(30)
+  user_id                 BigInt
+  category                String                    @default("ACCOUNT") @db.VarChar(50)
+  subject                 String                    @db.VarChar(200)
+  description             String
+  status                  String                    @default("OPEN") @db.VarChar(20)
+  priority                String                    @default("MEDIUM") @db.VarChar(20)
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  support_ticket_messages support_ticket_messages[]
+  users                   users                     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([status], map: "idx_tickets_status")
+  @@index([user_id, created_at(sort: Desc)], map: "idx_tickets_user")
+}
+
+model user_consents {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          BigInt
+  consent_type     String    @db.VarChar(50)
+  document_version String    @default("1.0") @db.VarChar(20)
+  is_granted       Boolean   @default(true)
+  channel          String?   @default("APP") @db.VarChar(30)
+  ip_address       String?   @db.VarChar(45)
+  user_agent       String?
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  users            users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, consent_type, created_at(sort: Desc)], map: "idx_consents_user_type")
 }

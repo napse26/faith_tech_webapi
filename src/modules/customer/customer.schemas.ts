@@ -79,3 +79,48 @@ export const updateNotificationPreferencesSchema = z.object({
   dailyHoroscopeEnabled: z.boolean().optional(),
   festivalAlertsEnabled: z.boolean().optional()
 });
+
+// ----------------- Phase 3: Privacy & Lifecycle -----------------
+export const updateConsentItemSchema = z.object({
+  consentType: z.string().trim().min(1).max(50),
+  isGranted: z.boolean(),
+  documentVersion: z.string().trim().max(20).optional().default('1.0'),
+  channel: z.string().trim().max(30).optional().default('APP')
+});
+
+export const updateConsentsSchema = z.object({
+  consents: z.array(updateConsentItemSchema).min(1, 'At least one consent item is required')
+});
+
+export const acceptConsentSchema = z.object({
+  consentType: z.string().trim().min(1).max(50),
+  documentVersion: z.string().trim().max(20).optional().default('1.0'),
+  channel: z.string().trim().max(30).optional().default('APP')
+});
+
+export const deactivateAccountSchema = z.object({
+  reason: z.string().trim().max(255).optional(),
+  feedback: z.string().trim().max(1000).optional()
+});
+
+export const reactivateAccountSchema = z.object({
+  note: z.string().trim().max(255).optional()
+});
+
+export const requestDeletionSchema = z.object({
+  reason: z.string().trim().max(255).optional(),
+  feedback: z.string().trim().max(1000).optional()
+});
+
+// ----------------- Phase 4: Additional Features -----------------
+export const createSupportTicketSchema = z.object({
+  category: z.enum(['ACCOUNT', 'PAYMENT', 'KUNDLI', 'CONSULTATION', 'APP_ISSUE', 'OTHER']).default('ACCOUNT'),
+  subject: z.string().trim().min(3, 'Subject must be at least 3 characters').max(200),
+  description: z.string().trim().min(10, 'Description must be at least 10 characters').max(5000),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM')
+});
+
+export const addTicketMessageSchema = z.object({
+  message: z.string().trim().min(1, 'Message cannot be empty').max(3000)
+});
+

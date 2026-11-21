@@ -117,3 +117,141 @@ export interface SecurityOverviewDto {
   currentSessionId: string;
   lastLoginAt: Date | null;
 }
+
+// ----------------- Phase 3: Privacy & Lifecycle -----------------
+export interface ConsentItemDto {
+  consentType: string;
+  documentVersion: string;
+  isGranted: boolean;
+  channel: string | null;
+  updatedAt: Date | null;
+}
+
+export interface UpdateConsentItemInput {
+  consentType: string;
+  isGranted: boolean;
+  documentVersion?: string;
+  channel?: string;
+}
+
+export interface UpdateConsentsInput {
+  consents: UpdateConsentItemInput[];
+}
+
+export interface AcceptConsentInput {
+  consentType: string;
+  documentVersion?: string;
+  channel?: string;
+}
+
+export interface PrivacyOverviewDto {
+  consents: ConsentItemDto[];
+  dataRetentionPolicy: string;
+  deletionRequestPending: boolean;
+  deletionScheduledAt: Date | null;
+}
+
+export interface DeactivateAccountInput {
+  reason?: string;
+  feedback?: string;
+}
+
+export interface DeactivationResultDto {
+  status: string;
+  message: string;
+  deactivatedAt: Date;
+}
+
+export interface ReactivateAccountInput {
+  note?: string;
+}
+
+export interface ReactivationResultDto {
+  status: string;
+  message: string;
+  reactivatedAt: Date;
+}
+
+export interface RequestDeletionInput {
+  reason?: string;
+  feedback?: string;
+}
+
+export interface DeletionRequestDto {
+  requestId: string;
+  status: string;
+  reason: string | null;
+  scheduledPurgeAt: Date;
+  createdAt: Date | null;
+  cancellationAllowedUntil: Date;
+}
+
+// ----------------- Phase 4: Additional Features -----------------
+export interface CreateSupportTicketInput {
+  category: string;
+  subject: string;
+  description: string;
+  priority?: string;
+}
+
+export interface AddTicketMessageInput {
+  message: string;
+}
+
+export interface SupportTicketMessageDto {
+  messageId: string;
+  senderType: string;
+  senderId?: string | null;
+  message: string;
+  createdAt: Date | null;
+}
+
+export interface SupportTicketDto {
+  ticketId: string;
+  ticketNumber: string;
+  category: string;
+  subject: string;
+  description: string;
+  status: string;
+  priority: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  messages?: SupportTicketMessageDto[];
+}
+
+export interface FavoriteAstrologerDto {
+  astrologerId: string;
+  displayName: string;
+  profileImage: string | null;
+  primarySpecialization: string | null;
+  languages: string[] | null;
+  experienceYears: number | null;
+  chatRate: number | null;
+  callRate: number | null;
+  avgRating: number | null;
+  totalReviews: number | null;
+  isOnline: boolean;
+  favoritedAt: Date | null;
+}
+
+export interface RecentAstrologerDto {
+  astrologerId: string;
+  displayName: string;
+  profileImage: string | null;
+  primarySpecialization: string | null;
+  chatRate: number | null;
+  callRate: number | null;
+  avgRating: number | null;
+  interactionType: string | null;
+  lastInteractedAt: Date | null;
+}
+
+export interface CustomerActivityItemDto {
+  id: string;
+  activityType: string;
+  description: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  timestamp: Date | null;
+}
+

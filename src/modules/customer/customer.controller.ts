@@ -351,6 +351,240 @@ export class CustomerController {
       next(error);
     }
   }
+
+  // =========================================================================
+  // PRIVACY & CONSENT (Phase 3)
+  // =========================================================================
+
+  async getConsents(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const consents = await customerService.getConsents(req.user!.userId);
+      res.status(200).json(
+        createSuccessResponse(consents, 'Consents retrieved successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateConsents(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const consents = await customerService.updateConsents(req.user!.userId, req.body, {
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      res.status(200).json(
+        createSuccessResponse(consents, 'Consents updated successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async acceptConsent(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const consent = await customerService.acceptConsent(req.user!.userId, req.body, {
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      res.status(200).json(
+        createSuccessResponse(consent, 'Consent accepted successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPrivacyOverview(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const overview = await customerService.getPrivacyOverview(req.user!.userId);
+      res.status(200).json(
+        createSuccessResponse(overview, 'Privacy overview retrieved successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // =========================================================================
+  // ACCOUNT LIFECYCLE (Phase 3)
+  // =========================================================================
+
+  async deactivateAccount(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await customerService.deactivateAccount(req.user!.userId, req.body, req.ip);
+      res.status(200).json(
+        createSuccessResponse(result, 'Account deactivated successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async reactivateAccount(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await customerService.reactivateAccount(req.user!.userId, req.body, req.ip);
+      res.status(200).json(
+        createSuccessResponse(result, 'Account reactivated successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async requestAccountDeletion(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await customerService.requestAccountDeletion(req.user!.userId, req.body, req.ip);
+      res.status(200).json(
+        createSuccessResponse(result, 'Account deletion requested successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getDeletionRequest(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await customerService.getDeletionRequest(req.user!.userId);
+      res.status(200).json(
+        createSuccessResponse(result, 'Account deletion request retrieved successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async cancelAccountDeletion(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await customerService.cancelAccountDeletion(req.user!.userId, req.ip);
+      res.status(200).json(
+        createSuccessResponse(result, 'Account deletion request cancelled successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // =========================================================================
+  // SUPPORT REQUESTS (Phase 4)
+  // =========================================================================
+
+  async listSupportTickets(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const page = req.query.page ? Math.max(1, parseInt(String(req.query.page), 10)) : 1;
+      const limit = req.query.limit ? Math.min(100, Math.max(1, parseInt(String(req.query.limit), 10))) : 20;
+      const result = await customerService.listSupportTickets(req.user!.userId, page, limit);
+      res.status(200).json(
+        createSuccessResponse(result, 'Support tickets retrieved successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async createSupportTicket(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ticket = await customerService.createSupportTicket(req.user!.userId, req.body);
+      res.status(201).json(
+        createSuccessResponse(ticket, 'Support ticket created successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getSupportTicket(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ticketId = String(req.params.ticketId);
+      const ticket = await customerService.getSupportTicket(req.user!.userId, ticketId);
+      res.status(200).json(
+        createSuccessResponse(ticket, 'Support ticket retrieved successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async addTicketMessage(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ticketId = String(req.params.ticketId);
+      const message = await customerService.addTicketMessage(req.user!.userId, ticketId, req.body);
+      res.status(201).json(
+        createSuccessResponse(message, 'Message added to support ticket successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // =========================================================================
+  // FAVORITES & RECENT ASTROLOGERS (Phase 4)
+  // =========================================================================
+
+  async listFavorites(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const favorites = await customerService.listFavorites(req.user!.userId);
+      res.status(200).json(
+        createSuccessResponse(favorites, 'Favorite astrologers retrieved successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async addFavorite(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const astrologerId = BigInt(String(req.params.astrologerId));
+      const result = await customerService.addFavorite(req.user!.userId, astrologerId);
+      res.status(200).json(
+        createSuccessResponse(result, 'Astrologer added to favorites successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async removeFavorite(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const astrologerId = BigInt(String(req.params.astrologerId));
+      await customerService.removeFavorite(req.user!.userId, astrologerId);
+      res.status(200).json(
+        createSuccessResponse(null, 'Astrologer removed from favorites successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async listRecentAstrologers(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const limit = req.query.limit ? Math.min(50, Math.max(1, parseInt(String(req.query.limit), 10))) : 10;
+      const recent = await customerService.listRecentAstrologers(req.user!.userId, limit);
+      res.status(200).json(
+        createSuccessResponse(recent, 'Recent astrologers retrieved successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // =========================================================================
+  // CUSTOMER ACTIVITY (Phase 4)
+  // =========================================================================
+
+  async getCustomerActivity(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const page = req.query.page ? Math.max(1, parseInt(String(req.query.page), 10)) : 1;
+      const limit = req.query.limit ? Math.min(100, Math.max(1, parseInt(String(req.query.limit), 10))) : 20;
+      const activity = await customerService.getCustomerActivity(req.user!.userId, page, limit);
+      res.status(200).json(
+        createSuccessResponse(activity, 'Customer activity retrieved successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
 }
 
 export const customerController = new CustomerController();
