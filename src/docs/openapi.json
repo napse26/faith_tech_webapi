@@ -7,6 +7,10 @@
   },
   "servers": [
     {
+      "url": "/",
+      "description": "Current Server (Relative - works on any host/port)"
+    },
+    {
       "url": "http://localhost:3000",
       "description": "Local Development Server"
     }
@@ -576,6 +580,183 @@
             "example": "Here is additional context regarding the time of birth."
           }
         }
+      },
+      "SendOtpRequest": {
+        "type": "object",
+        "required": [
+          "phoneNumber"
+        ],
+        "properties": {
+          "phoneNumber": {
+            "type": "string",
+            "example": "9999988888",
+            "description": "Mobile number (10 digits for Indian numbers, or international format)"
+          },
+          "countryCode": {
+            "type": "string",
+            "example": "+91",
+            "default": "+91",
+            "description": "Country calling code (e.g. +91)"
+          }
+        }
+      },
+      "VerifyOtpRequest": {
+        "type": "object",
+        "required": [
+          "challengeId",
+          "otp"
+        ],
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "c1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+            "description": "Challenge / verification ID returned from send-otp"
+          },
+          "otp": {
+            "type": "string",
+            "example": "1234",
+            "description": "4-digit verification OTP (or development sample OTP)"
+          },
+          "deviceId": {
+            "type": "string",
+            "example": "dev-device-123",
+            "description": "Optional unique device identifier"
+          },
+          "deviceName": {
+            "type": "string",
+            "example": "Chrome / Pixel 7",
+            "description": "Optional user-friendly device name"
+          },
+          "deviceType": {
+            "type": "string",
+            "example": "ANDROID",
+            "enum": [
+              "ANDROID",
+              "IOS",
+              "WEB",
+              "OTHER"
+            ],
+            "description": "Optional client platform"
+          }
+        }
+      },
+      "RefreshTokenRequest": {
+        "type": "object",
+        "required": [
+          "refreshToken"
+        ],
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "description": "Opaque or JWT refresh token issued during login"
+          }
+        }
+      },
+      "UploadProfilePhotoRequest": {
+        "type": "object",
+        "required": [
+          "profilePhotoUrl"
+        ],
+        "properties": {
+          "profilePhotoUrl": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
+            "description": "Publicly accessible URL or storage reference for profile photo"
+          }
+        }
+      },
+      "SetDefaultBirthProfileRequest": {
+        "type": "object",
+        "properties": {
+          "isDefault": {
+            "type": "boolean",
+            "example": true,
+            "default": true,
+            "description": "Set true to make this birth profile default"
+          }
+        }
+      },
+      "InitiateMobileChangeRequest": {
+        "type": "object",
+        "required": [
+          "newMobileNumber"
+        ],
+        "properties": {
+          "newMobileNumber": {
+            "type": "string",
+            "example": "9876543210",
+            "description": "New mobile number to verify"
+          }
+        }
+      },
+      "VerifyMobileChangeRequest": {
+        "type": "object",
+        "required": [
+          "otp"
+        ],
+        "properties": {
+          "verificationId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "c1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+            "description": "Verification ID returned by initiate"
+          },
+          "challengeId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "c1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+            "description": "Alternative parameter for verificationId"
+          },
+          "otp": {
+            "type": "string",
+            "example": "1234",
+            "description": "4-to-6-digit OTP"
+          }
+        }
+      },
+      "InitiateEmailVerificationRequest": {
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "customer@example.com",
+            "description": "New email address to verify"
+          }
+        }
+      },
+      "VerifyEmailVerificationRequest": {
+        "type": "object",
+        "properties": {
+          "verificationId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "c1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+            "description": "Verification ID returned by initiate"
+          },
+          "challengeId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "c1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+            "description": "Alternative parameter for verificationId"
+          },
+          "verificationCode": {
+            "type": "string",
+            "example": "1234",
+            "description": "4-to-6-digit email verification code"
+          },
+          "otp": {
+            "type": "string",
+            "example": "1234",
+            "description": "Alternative parameter for verificationCode"
+          }
+        }
       }
     }
   },
@@ -591,6 +772,17 @@
           "200": {
             "description": "OTP sent successfully"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "description": "Mobile phone number and country code",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendOtpRequest"
+              }
+            }
+          }
         }
       }
     },
@@ -605,6 +797,17 @@
           "200": {
             "description": "Login successful"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "description": "Verification OTP and challenge ID",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOtpRequest"
+              }
+            }
+          }
         }
       }
     },
@@ -618,6 +821,17 @@
         "responses": {
           "200": {
             "description": "Token refreshed successfully"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "description": "Valid refresh token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              }
+            }
           }
         }
       }
@@ -748,6 +962,17 @@
           "200": {
             "description": "Profile photo updated successfully"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "description": "Profile photo URL",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadProfilePhotoRequest"
+              }
+            }
+          }
         }
       },
       "delete": {
@@ -856,7 +1081,8 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "1"
           }
         ],
         "responses": {
@@ -885,7 +1111,8 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "1"
           }
         ],
         "requestBody": {
@@ -921,7 +1148,8 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "1"
           }
         ],
         "responses": {
@@ -949,12 +1177,24 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "1"
           }
         ],
         "responses": {
           "200": {
             "description": "Default birth profile updated atomically"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "description": "Set default flag (default: true)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetDefaultBirthProfileRequest"
+              }
+            }
           }
         }
       }
@@ -1083,7 +1323,8 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "550e8400-e29b-41d4-a716-446655440000"
           }
         ],
         "responses": {
@@ -1451,7 +1692,9 @@
             "schema": {
               "type": "integer",
               "default": 1
-            }
+            },
+            "required": false,
+            "example": 1
           },
           {
             "name": "limit",
@@ -1459,7 +1702,9 @@
             "schema": {
               "type": "integer",
               "default": 20
-            }
+            },
+            "required": false,
+            "example": 20
           }
         ],
         "responses": {
@@ -1513,7 +1758,8 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "TKT-100200-300"
           }
         ],
         "responses": {
@@ -1541,7 +1787,8 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "TKT-100200-300"
           }
         ],
         "requestBody": {
@@ -1597,7 +1844,8 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "1"
           }
         ],
         "responses": {
@@ -1623,7 +1871,8 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "1"
           }
         ],
         "responses": {
@@ -1651,7 +1900,9 @@
             "schema": {
               "type": "integer",
               "default": 10
-            }
+            },
+            "required": false,
+            "example": 20
           }
         ],
         "responses": {
@@ -1679,7 +1930,9 @@
             "schema": {
               "type": "integer",
               "default": 1
-            }
+            },
+            "required": false,
+            "example": 1
           },
           {
             "name": "limit",
@@ -1687,12 +1940,167 @@
             "schema": {
               "type": "integer",
               "default": 20
-            }
+            },
+            "required": false,
+            "example": 20
           }
         ],
         "responses": {
           "200": {
             "description": "Customer activity history retrieved"
+          }
+        }
+      }
+    },
+    "/api/v1/customers/me/mobile/change/initiate": {
+      "post": {
+        "tags": [
+          "Contact Verification"
+        ],
+        "summary": "5.1 Initiate Mobile Number Change",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "Sends an OTP to the new mobile number before updating customer profile.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiateMobileChangeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP sent to new mobile number successfully"
+          },
+          "400": {
+            "description": "Invalid phone number format"
+          },
+          "409": {
+            "description": "Phone number already registered to another account"
+          }
+        }
+      }
+    },
+    "/api/v1/customers/me/mobile/change/verify": {
+      "post": {
+        "tags": [
+          "Contact Verification"
+        ],
+        "summary": "5.2 Verify Mobile Number Change",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "Verifies the OTP sent to new mobile number and updates customer mobile.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyMobileChangeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mobile number updated and verified successfully"
+          },
+          "400": {
+            "description": "Invalid or expired OTP"
+          }
+        }
+      }
+    },
+    "/api/v1/customers/me/email/verification/initiate": {
+      "post": {
+        "tags": [
+          "Contact Verification"
+        ],
+        "summary": "5.3 Initiate Email Verification",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "Sends a verification code to customer email address.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiateEmailVerificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification code sent to email"
+          },
+          "400": {
+            "description": "Invalid email format"
+          }
+        }
+      }
+    },
+    "/api/v1/customers/me/email/verification/verify": {
+      "post": {
+        "tags": [
+          "Contact Verification"
+        ],
+        "summary": "5.4 Verify Email Verification Code",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "Verifies the code and marks customer email as verified.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailVerificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email verified successfully"
+          },
+          "400": {
+            "description": "Invalid or expired verification code"
+          }
+        }
+      }
+    },
+    "/api/v1/customers/me/email": {
+      "delete": {
+        "tags": [
+          "Contact Verification"
+        ],
+        "summary": "5.5 Remove Email Address",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "Removes email from customer profile. Only permitted when mobile number is verified.",
+        "responses": {
+          "200": {
+            "description": "Email removed successfully"
+          },
+          "400": {
+            "description": "Cannot remove email when mobile is unverified"
           }
         }
       }

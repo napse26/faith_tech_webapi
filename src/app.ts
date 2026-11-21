@@ -25,7 +25,19 @@ export function createApp(): Express {
   const app = express();
 
   // Basic security and request parsing
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'", 'http:', 'https:']
+        }
+      }
+    })
+  );
   app.use(cors());
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
@@ -72,8 +84,18 @@ export function createApp(): Express {
     }
   });
 
+  // Swagger Documentation Options
+  const swaggerUiOptions: swaggerUi.SwaggerOptions = {
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      tryItOutEnabled: true, // Enables Try It Out by default so parameters and body inputs are editable immediately
+      filter: true
+    }
+  };
+
   // Swagger Documentation
-  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec, swaggerUiOptions));
   app.get('/api/docs.json', (req: Request, res: Response) => {
     res.json(openapiSpec);
   });
