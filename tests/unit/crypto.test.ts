@@ -9,7 +9,7 @@ import {
 
 describe('Cryptographic Utilities (Unit)', () => {
   it('should generate a 6-digit numeric OTP', () => {
-    const otp = generateOtp();
+    const otp = generateOtp(6);
     expect(otp).toHaveLength(6);
     expect(/^\d{6}$/.test(otp)).toBe(true);
   });

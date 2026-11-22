@@ -4,8 +4,9 @@
   "description": "Enterprise-grade REST API backend for Astrology Mobile Application",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"const fs=require('fs'); if (!fs.existsSync('dist/src')) fs.mkdirSync('dist/src', {recursive:true}); fs.writeFileSync('dist/src/server.js', 'require(\\\"../server.js\\\");\\n');\"",
     "start": "node dist/server.js",
+    "start:src": "node dist/src/server.js",
     "dev": "tsx watch src/server.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

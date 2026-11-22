@@ -10,12 +10,12 @@ async function bootstrap() {
     await connectDatabase();
     logger.info('Connected to PostgreSQL successfully.');
 
-    const server = app.listen(env.PORT, () => {
+    const server = app.listen(env.PORT, '0.0.0.0', () => {
       logger.info(
-        `🚀 FaithTech Astrology API server is running on http://localhost:${env.PORT} in ${env.NODE_ENV} mode`
+        `🚀 FaithTech Astrology API server is running on http://0.0.0.0:${env.PORT} in ${env.NODE_ENV} mode`
       );
-      logger.info(`📚 Swagger UI documentation available at http://localhost:${env.PORT}/api/docs`);
-      logger.info(`💓 Health check available at http://localhost:${env.PORT}/health`);
+      logger.info(`📚 Swagger UI documentation available at http://0.0.0.0:${env.PORT}/api/docs/`);
+      logger.info(`💓 Health check available at http://0.0.0.0:${env.PORT}/health`);
     });
 
     // Graceful shutdown handling

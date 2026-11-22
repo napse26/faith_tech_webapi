@@ -24,18 +24,14 @@ import { customerRoutes } from './modules/customer/customer.routes';
 export function createApp(): Express {
   const app = express();
 
+  // Trust reverse proxies (Nginx, AWS ALB, Cloudflare) on deployed servers
+  app.set('trust proxy', 1);
+
   // Basic security and request parsing
   app.use(
     helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", 'data:', 'https:'],
-          connectSrc: ["'self'", 'http:', 'https:']
-        }
-      }
+      contentSecurityPolicy: false, // Disables Helmet CSP so Swagger UI and HTTP IP deployments load reliably
+      crossOriginResourcePolicy: { policy: 'cross-origin' }
     })
   );
   app.use(cors());
@@ -44,6 +40,26 @@ export function createApp(): Express {
 
   // Request correlation / trace ID
   app.use(requestIdMiddleware);
+
+  // Root route: Redirect browsers to Swagger UI documentation, return API info for JSON clients
+  app.get('/', (req: Request, res: Response) => {
+    if (req.accepts('html')) {
+      return res.redirect('/api/docs/');
+    }
+    return res.status(200).json(
+      createSuccessResponse(
+        {
+          name: 'DharmaDarshan Astrology & Customer Management API',
+          version: '1.0.0',
+          docs: '/api/docs/',
+          health: '/health',
+          ready: '/ready'
+        },
+        'Welcome to FaithTech DharmaDarshan API',
+        req.traceId
+      )
+    );
+  });
 
   // Health check & readiness probes (unthrottled)
   app.get('/health', (req: Request, res: Response) => {
@@ -91,8 +107,14 @@ export function createApp(): Express {
       displayRequestDuration: true,
       tryItOutEnabled: true, // Enables Try It Out by default so parameters and body inputs are editable immediately
       filter: true
-    }
+    },
+    customSiteTitle: 'DharmaDarshan API Documentation'
   };
+
+  // Swagger Documentation aliases & trailing slash handlers
+  app.get(['/docs', '/swagger'], (req: Request, res: Response) => {
+    res.redirect('/api/docs/');
+  });
 
   // Swagger Documentation
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec, swaggerUiOptions));
