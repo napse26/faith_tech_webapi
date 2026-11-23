@@ -53,7 +53,8 @@ export function createApp(): Express {
           version: '1.0.0',
           docs: '/api/docs/',
           health: '/health',
-          ready: '/ready'
+          ready: '/ready',
+          status: 'DEPLOYED_LATEST'
         },
         'Welcome to FaithTech DharmaDarshan API',
         req.traceId
@@ -68,7 +69,9 @@ export function createApp(): Express {
         {
           status: 'UP',
           uptime: process.uptime(),
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          version: '1.0.0',
+          deployment: 'LATEST'
         },
         'Service is healthy',
         req.traceId
