@@ -15,6 +15,12 @@ import { profileRoutes } from './modules/profiles/profile.routes';
 import { birthDetailsRoutes } from './modules/birth-details/birth-details.routes';
 import { userRoutes } from './modules/users/user.routes';
 import { customerRoutes } from './modules/customer/customer.routes';
+import { astrologerRoutes } from './modules/astrologers/astrologer.routes';
+import { adminAstrologerRoutes } from './modules/astrologers/admin-astrologer.routes';
+import { poojaRoutes } from './modules/poojas/pooja.routes';
+import { poojaBookingRoutes } from './modules/poojas/pooja-booking.routes';
+import { adminPoojaRoutes } from './modules/poojas/admin-pooja.routes';
+import { adminPoojaBookingRoutes } from './modules/poojas/admin-pooja-booking.routes';
 
 // Ensure BigInt values serialize cleanly to JSON
 (BigInt.prototype as any).toJSON = function () {
@@ -134,6 +140,12 @@ export function createApp(): Express {
   app.use('/api/v1/users', profileRoutes);
   app.use('/api/v1/users', birthDetailsRoutes);
   app.use('/api/v1/users', userRoutes);
+  app.use('/api/v1/astrologers', astrologerRoutes);
+  app.use('/api/v1/admin/astrologers', adminAstrologerRoutes);
+  app.use('/api/v1/poojas', poojaRoutes);
+  app.use('/api/v1/pooja-bookings', poojaBookingRoutes);
+  app.use('/api/v1/admin/poojas', adminPoojaRoutes);
+  app.use('/api/v1/admin/pooja-bookings', adminPoojaBookingRoutes);
 
   // Catch-all 404 handler
   app.use((req: Request, res: Response) => {

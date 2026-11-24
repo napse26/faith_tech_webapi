@@ -7,6 +7,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model account_deletion_requests {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            BigInt
+  status             String    @default("PENDING") @db.VarChar(20)
+  reason             String?
+  scheduled_purge_at DateTime  @db.Timestamptz(6)
+  executed_at        DateTime? @db.Timestamptz(6)
+  created_at         DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime? @default(now()) @db.Timestamptz(6)
+  users              users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, status], map: "idx_del_req_user_status")
+}
+
 model admin_details {
   admin_detail_id BigInt    @id @default(autoincrement())
   user_id         BigInt    @unique
@@ -34,6 +48,56 @@ model appointments {
   users            users       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model astrologer_availability {
+  id                    String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  astrologer_id         BigInt
+  day_of_week           Int
+  start_time            String      @db.VarChar(8)
+  end_time              String      @db.VarChar(8)
+  slot_duration_minutes Int?        @default(15)
+  is_active             Boolean?    @default(true)
+  timezone              String?     @default("Asia/Kolkata") @db.VarChar(50)
+  created_at            DateTime?   @default(now()) @db.Timestamptz(6)
+  astrologers           astrologers @relation(fields: [astrologer_id], references: [astrologer_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([astrologer_id, day_of_week, start_time, end_time])
+  @@index([astrologer_id, day_of_week], map: "idx_astro_avail_astrologer")
+}
+
+model astrologer_availability_exceptions {
+  exception_id   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  astrologer_id  BigInt
+  exception_date DateTime    @db.Date
+  is_available   Boolean     @default(false)
+  start_time     String?     @db.VarChar(8)
+  end_time       String?     @db.VarChar(8)
+  reason         String?     @db.VarChar(200)
+  created_at     DateTime?   @default(now()) @db.Timestamptz(6)
+  astrologers    astrologers @relation(fields: [astrologer_id], references: [astrologer_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([astrologer_id, exception_date], map: "idx_astro_avail_exc")
+}
+
+model astrologer_documents {
+  document_id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  astrologer_id       BigInt
+  document_type       String      @db.VarChar(50)
+  document_name       String      @db.VarChar(150)
+  file_url            String      @db.VarChar(500)
+  file_size           Int?
+  mime_type           String?     @db.VarChar(50)
+  verification_status String?     @default("PENDING_REVIEW") @db.VarChar(20)
+  rejection_reason    String?
+  verified_by         BigInt?
+  verified_at         DateTime?   @db.Timestamptz(6)
+  created_at          DateTime?   @default(now()) @db.Timestamptz(6)
+  astrologers         astrologers @relation(fields: [astrologer_id], references: [astrologer_id], onDelete: Cascade, onUpdate: NoAction)
+  users               users?      @relation(fields: [verified_by], references: [user_id], onUpdate: NoAction)
+
+  @@index([astrologer_id, document_type], map: "idx_astro_docs_astrologer")
+}
+
 model astrologer_kyc {
   astrologer_kyc_id   BigInt      @id @default(autoincrement())
   astrologer_id       BigInt
@@ -47,6 +111,8 @@ model astrologer_kyc {
   approved_by         BigInt?
   approved_on         DateTime?   @db.Timestamptz(6)
   created_on          DateTime?   @default(now()) @db.Timestamptz(6)
+  payout_method       String?     @default("BANK_TRANSFER") @db.VarChar(30)
+  upi_id              String?     @db.VarChar(100)
   users               users?      @relation(fields: [approved_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
   astrologers         astrologers @relation(fields: [astrologer_id], references: [astrologer_id], onDelete: Cascade, onUpdate: NoAction)
 }
@@ -59,6 +125,25 @@ model astrologer_languages {
   languages              languages   @relation(fields: [language_id], references: [language_id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([astrologer_id, language_id], map: "uq_astrologer_languages")
+}
+
+model astrologer_qualifications {
+  qualification_id    String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  astrologer_id       BigInt
+  qualification_name  String      @db.VarChar(200)
+  institution         String      @db.VarChar(200)
+  year_of_completion  Int?
+  description         String?
+  certificate_url     String?     @db.VarChar(500)
+  verification_status String?     @default("PENDING") @db.VarChar(20)
+  verified_by         BigInt?
+  verified_on         DateTime?   @db.Timestamptz(6)
+  created_at          DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?   @default(now()) @db.Timestamptz(6)
+  astrologers         astrologers @relation(fields: [astrologer_id], references: [astrologer_id], onDelete: Cascade, onUpdate: NoAction)
+  users               users?      @relation(fields: [verified_by], references: [user_id], onUpdate: NoAction)
+
+  @@index([astrologer_id], map: "idx_astro_qual_astrologer")
 }
 
 model astrologer_service_request_checklist {
@@ -111,43 +196,79 @@ model astrologer_specializations {
   @@unique([astrologer_id, specialization_id], map: "uq_astrologer_specializations")
 }
 
+model astrologer_status_history {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  astrologer_id BigInt
+  from_status   String?     @db.VarChar(30)
+  to_status     String      @db.VarChar(30)
+  actor_id      BigInt
+  actor_role    String      @db.VarChar(30)
+  reason        String?
+  created_at    DateTime?   @default(now()) @db.Timestamptz(6)
+  users         users       @relation(fields: [actor_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  astrologers   astrologers @relation(fields: [astrologer_id], references: [astrologer_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([astrologer_id, created_at(sort: Desc)], map: "idx_astro_status_hist")
+}
+
 model astrologers {
-  astrologer_id                     BigInt                              @id @default(autoincrement())
-  user_id                           BigInt                              @unique
-  display_name                      String                              @db.VarChar(200)
-  gender                            String?                             @db.VarChar(10)
-  experience_years                  Int?                                @default(0)
-  qualification                     String?                             @db.VarChar(500)
-  about_me                          String?
-  profile_image                     String?                             @db.VarChar(500)
-  cover_image                       String?                             @db.VarChar(500)
-  chat_rate                         Decimal?                            @default(0) @db.Decimal(10, 2)
-  call_rate                         Decimal?                            @default(0) @db.Decimal(10, 2)
-  video_rate                        Decimal?                            @default(0) @db.Decimal(10, 2)
-  commission_percentage             Decimal?                            @default(0) @db.Decimal(5, 2)
-  avg_rating                        Decimal?                            @default(0) @db.Decimal(3, 2)
-  total_reviews                     Int?                                @default(0)
-  total_chat_minutes                Int?                                @default(0)
-  total_call_minutes                Int?                                @default(0)
-  total_video_minutes               Int?                                @default(0)
-  total_earnings                    Decimal?                            @default(0) @db.Decimal(18, 2)
-  is_online                         Boolean?                            @default(false)
-  is_busy                           Boolean?                            @default(false)
-  is_verified                       Boolean?                            @default(false)
-  verification_date                 DateTime?                           @db.Timestamptz(6)
-  created_on                        DateTime?                           @default(now()) @db.Timestamptz(6)
-  updated_on                        DateTime?                           @default(now()) @db.Timestamptz(6)
-  appointments                      appointments[]
-  astrologer_kyc                    astrologer_kyc[]
-  astrologer_languages              astrologer_languages[]
-  astrologer_services               astrologer_services[]
-  astrologer_specializations        astrologer_specializations[]
-  users                             users                               @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
-  broadcasts                        broadcasts[]
-  customer_recent_astrologers       customer_recent_astrologers[]
-  favorite_astrologers              favorite_astrologers[]
-  reviews                           reviews[]
-  user_consultation_sessions_detail user_consultation_sessions_detail[]
+  astrologer_id                        BigInt                               @id @default(autoincrement())
+  user_id                              BigInt                               @unique
+  display_name                         String                               @db.VarChar(200)
+  gender                               String?                              @db.VarChar(10)
+  experience_years                     Int?                                 @default(0)
+  qualification                        String?                              @db.VarChar(500)
+  about_me                             String?
+  profile_image                        String?                              @db.VarChar(500)
+  cover_image                          String?                              @db.VarChar(500)
+  chat_rate                            Decimal?                             @default(0) @db.Decimal(10, 2)
+  call_rate                            Decimal?                             @default(0) @db.Decimal(10, 2)
+  video_rate                           Decimal?                             @default(0) @db.Decimal(10, 2)
+  commission_percentage                Decimal?                             @default(0) @db.Decimal(5, 2)
+  avg_rating                           Decimal?                             @default(0) @db.Decimal(3, 2)
+  total_reviews                        Int?                                 @default(0)
+  total_chat_minutes                   Int?                                 @default(0)
+  total_call_minutes                   Int?                                 @default(0)
+  total_video_minutes                  Int?                                 @default(0)
+  total_earnings                       Decimal?                             @default(0) @db.Decimal(18, 2)
+  is_online                            Boolean?                             @default(false)
+  is_busy                              Boolean?                             @default(false)
+  is_verified                          Boolean?                             @default(false)
+  verification_date                    DateTime?                            @db.Timestamptz(6)
+  created_on                           DateTime?                            @default(now()) @db.Timestamptz(6)
+  updated_on                           DateTime?                            @default(now()) @db.Timestamptz(6)
+  onboarding_status                    String?                              @default("DRAFT") @db.VarChar(30)
+  legal_name                           String?                              @db.VarChar(200)
+  astrology_tradition                  String?                              @db.VarChar(100)
+  city                                 String?                              @db.VarChar(100)
+  state                                String?                              @db.VarChar(100)
+  country                              String?                              @default("India") @db.VarChar(100)
+  timezone                             String?                              @default("Asia/Kolkata") @db.VarChar(50)
+  submitted_at                         DateTime?                            @db.Timestamptz(6)
+  reviewed_at                          DateTime?                            @db.Timestamptz(6)
+  reviewed_by                          BigInt?
+  rejection_reason                     String?
+  admin_notes                          String?
+  appointments                         appointments[]
+  astrologer_availability              astrologer_availability[]
+  astrologer_availability_exceptions   astrologer_availability_exceptions[]
+  astrologer_documents                 astrologer_documents[]
+  astrologer_kyc                       astrologer_kyc[]
+  astrologer_languages                 astrologer_languages[]
+  astrologer_qualifications            astrologer_qualifications[]
+  astrologer_services                  astrologer_services[]
+  astrologer_specializations           astrologer_specializations[]
+  astrologer_status_history            astrologer_status_history[]
+  users_astrologers_reviewed_byTousers users?                               @relation("astrologers_reviewed_byTousers", fields: [reviewed_by], references: [user_id], onUpdate: NoAction)
+  users_astrologers_user_idTousers     users                                @relation("astrologers_user_idTousers", fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  broadcasts                           broadcasts[]
+  customer_recent_astrologers          customer_recent_astrologers[]
+  favorite_astrologers                 favorite_astrologers[]
+  reviews                              reviews[]
+  user_consultation_sessions_detail    user_consultation_sessions_detail[]
+
+  @@index([onboarding_status], map: "idx_astrologers_onboarding_status")
+  @@index([is_online, is_verified, onboarding_status], map: "idx_astrologers_online_verified")
 }
 
 model auth_audit_logs {
@@ -250,6 +371,19 @@ model customer_preferences {
   @@index([user_id], map: "idx_customer_pref_user_id")
 }
 
+model customer_recent_astrologers {
+  id                 String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            BigInt
+  astrologer_id      BigInt
+  interaction_type   String?     @default("VIEW") @db.VarChar(30)
+  last_interacted_at DateTime?   @default(now()) @db.Timestamptz(6)
+  astrologers        astrologers @relation(fields: [astrologer_id], references: [astrologer_id], onDelete: Cascade, onUpdate: NoAction)
+  users              users       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, astrologer_id], map: "uq_recent_astrologers")
+  @@index([user_id, last_interacted_at(sort: Desc)], map: "idx_recent_astrologers")
+}
+
 model document_master {
   document_master_id       Int                        @id @default(autoincrement())
   document_name            String                     @db.VarChar(100)
@@ -328,6 +462,207 @@ model payment_transactions {
   payment_method         String?   @db.VarChar(50)
   created_on             DateTime? @default(now()) @db.Timestamptz(6)
   users                  users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model pooja_addons {
+  addon_id     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pooja_id     String    @db.Uuid
+  title        String    @db.VarChar(150)
+  description  String?
+  price        Decimal   @db.Decimal(10, 2)
+  max_quantity Int?      @default(10)
+  is_active    Boolean?  @default(true)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  poojas       poojas    @relation(fields: [pooja_id], references: [pooja_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([pooja_id], map: "idx_pooja_addons_pooja")
+}
+
+model pooja_booking_audit {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  booking_id     String         @db.Uuid
+  from_status    String?        @db.VarChar(30)
+  to_status      String         @db.VarChar(30)
+  actor_id       BigInt
+  actor_role     String         @db.VarChar(30)
+  reason         String?
+  metadata       Json?
+  created_at     DateTime?      @default(now()) @db.Timestamptz(6)
+  users          users          @relation(fields: [actor_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  pooja_bookings pooja_bookings @relation(fields: [booking_id], references: [booking_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([booking_id, created_at(sort: Desc)], map: "idx_pooja_book_audit")
+}
+
+model pooja_bookings {
+  booking_id          String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  booking_number      String                @unique @db.VarChar(30)
+  user_id             BigInt
+  pooja_id            String                @db.Uuid
+  package_id          String                @db.Uuid
+  slot_id             String                @db.Uuid
+  delivery_mode       String                @db.VarChar(30)
+  status              String                @default("PENDING_PAYMENT") @db.VarChar(30)
+  price_snapshot      Json
+  package_snapshot    Json
+  devotees            Json
+  sankalp_details     Json?
+  customer_address    String?
+  priest_id           String?               @db.Uuid
+  live_stream_url     String?               @db.VarChar(500)
+  live_stream_notes   String?
+  cancellation_reason String?
+  cancellation_fee    Decimal?              @default(0) @db.Decimal(10, 2)
+  refund_amount       Decimal?              @default(0) @db.Decimal(10, 2)
+  refund_status       String?               @db.VarChar(30)
+  feedback_rating     Int?
+  feedback_comment    String?
+  created_at          DateTime?             @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?             @default(now()) @db.Timestamptz(6)
+  pooja_booking_audit pooja_booking_audit[]
+  pooja_packages      pooja_packages        @relation(fields: [package_id], references: [package_id], onUpdate: NoAction)
+  poojas              poojas                @relation(fields: [pooja_id], references: [pooja_id], onUpdate: NoAction)
+  priests             priests?              @relation(fields: [priest_id], references: [priest_id], onUpdate: NoAction)
+  pooja_slots         pooja_slots           @relation(fields: [slot_id], references: [slot_id], onUpdate: NoAction)
+  users               users                 @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([status], map: "idx_pooja_bookings_status")
+  @@index([user_id, created_at(sort: Desc)], map: "idx_pooja_bookings_user")
+}
+
+model pooja_categories {
+  category_id Int       @id @default(autoincrement())
+  name        String    @unique @db.VarChar(100)
+  code        String    @unique @db.VarChar(50)
+  description String?
+  image_url   String?   @db.VarChar(500)
+  is_active   Boolean?  @default(true)
+  sort_order  Int?      @default(0)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  poojas      poojas[]
+}
+
+model pooja_packages {
+  package_id       String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pooja_id         String           @db.Uuid
+  title            String           @db.VarChar(150)
+  description      String?
+  price            Decimal          @db.Decimal(10, 2)
+  discount_price   Decimal?         @db.Decimal(10, 2)
+  currency         String?          @default("INR") @db.VarChar(10)
+  duration_minutes Int?             @default(60)
+  max_devotees     Int?             @default(4)
+  samagri_included Boolean?         @default(true)
+  priest_level     String?          @default("SENIOR_ACHARYA") @db.VarChar(50)
+  delivery_mode    String?          @default("ONLINE") @db.VarChar(30)
+  is_active        Boolean?         @default(true)
+  created_at       DateTime?        @default(now()) @db.Timestamptz(6)
+  pooja_bookings   pooja_bookings[]
+  poojas           poojas           @relation(fields: [pooja_id], references: [pooja_id], onDelete: Cascade, onUpdate: NoAction)
+  pooja_quotes     pooja_quotes[]
+
+  @@index([pooja_id], map: "idx_pooja_packages_pooja")
+}
+
+model pooja_quotes {
+  quote_id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id              BigInt
+  pooja_id             String         @db.Uuid
+  package_id           String         @db.Uuid
+  slot_id              String         @db.Uuid
+  delivery_mode        String         @db.VarChar(30)
+  addons_json          Json?          @default("[]")
+  devotees_json        Json?          @default("[]")
+  sankalp_details_json Json?
+  base_price           Decimal        @db.Decimal(10, 2)
+  addons_total         Decimal?       @default(0) @db.Decimal(10, 2)
+  taxes                Decimal?       @default(0) @db.Decimal(10, 2)
+  discount             Decimal?       @default(0) @db.Decimal(10, 2)
+  total_price          Decimal        @db.Decimal(10, 2)
+  currency             String?        @default("INR") @db.VarChar(10)
+  expires_at           DateTime       @db.Timestamptz(6)
+  is_consumed          Boolean?       @default(false)
+  created_at           DateTime?      @default(now()) @db.Timestamptz(6)
+  pooja_packages       pooja_packages @relation(fields: [package_id], references: [package_id], onDelete: Cascade, onUpdate: NoAction)
+  poojas               poojas         @relation(fields: [pooja_id], references: [pooja_id], onDelete: Cascade, onUpdate: NoAction)
+  pooja_slots          pooja_slots    @relation(fields: [slot_id], references: [slot_id], onDelete: Cascade, onUpdate: NoAction)
+  users                users          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, expires_at], map: "idx_pooja_quotes_user")
+}
+
+model pooja_slots {
+  slot_id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pooja_id       String           @db.Uuid
+  slot_date      DateTime         @db.Date
+  start_time     String           @db.VarChar(8)
+  end_time       String           @db.VarChar(8)
+  timezone       String?          @default("Asia/Kolkata") @db.VarChar(50)
+  max_capacity   Int?             @default(5)
+  booked_count   Int?             @default(0)
+  status         String?          @default("AVAILABLE") @db.VarChar(20)
+  is_active      Boolean?         @default(true)
+  created_at     DateTime?        @default(now()) @db.Timestamptz(6)
+  pooja_bookings pooja_bookings[]
+  pooja_quotes   pooja_quotes[]
+  poojas         poojas           @relation(fields: [pooja_id], references: [pooja_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([pooja_id, slot_date, start_time, end_time])
+  @@index([pooja_id, slot_date, status], map: "idx_pooja_slots_date")
+}
+
+model poojas {
+  pooja_id                  String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  category_id               Int
+  title                     String           @db.VarChar(200)
+  slug                      String           @unique @db.VarChar(250)
+  short_description         String?          @db.VarChar(500)
+  description               String?
+  significance              String?
+  benefits                  String[]
+  ritual_steps              String[]
+  samagri_info              String?
+  instructions              String?
+  supported_languages       String[]         @default(["Hindi", "Sanskrit", "English"])
+  delivery_modes            String[]         @default(["ONLINE", "TEMPLE"])
+  temple_name               String?          @db.VarChar(200)
+  temple_location           String?          @db.VarChar(200)
+  image_url                 String?          @db.VarChar(500)
+  banner_url                String?          @db.VarChar(500)
+  duration_minutes          Int?             @default(60)
+  lead_time_hours           Int?             @default(24)
+  cancellation_policy       String?          @default("Cancellations allowed up to 24 hours prior with full refund. Rescheduling allowed up to 12 hours prior.")
+  cancellation_cutoff_hours Int?             @default(24)
+  reschedule_cutoff_hours   Int?             @default(12)
+  status                    String?          @default("DRAFT") @db.VarChar(20)
+  is_featured               Boolean?         @default(false)
+  created_at                DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at                DateTime?        @default(now()) @db.Timestamptz(6)
+  pooja_addons              pooja_addons[]
+  pooja_bookings            pooja_bookings[]
+  pooja_packages            pooja_packages[]
+  pooja_quotes              pooja_quotes[]
+  pooja_slots               pooja_slots[]
+  pooja_categories          pooja_categories @relation(fields: [category_id], references: [category_id], onUpdate: NoAction)
+
+  @@index([category_id], map: "idx_poojas_category")
+  @@index([status], map: "idx_poojas_status")
+}
+
+model priests {
+  priest_id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            BigInt?
+  name               String           @db.VarChar(150)
+  phone              String?          @db.VarChar(20)
+  email              String?          @db.VarChar(100)
+  qualification      String?          @db.VarChar(200)
+  temple_affiliation String?          @db.VarChar(200)
+  experience_years   Int?             @default(5)
+  rating             Decimal?         @default(5.0) @db.Decimal(3, 2)
+  is_active          Boolean?         @default(true)
+  created_at         DateTime?        @default(now()) @db.Timestamptz(6)
+  pooja_bookings     pooja_bookings[]
+  users              users?           @relation(fields: [user_id], references: [user_id], onUpdate: NoAction)
 }
 
 model referrals {
@@ -414,6 +749,37 @@ model specializations {
   astrologer_specializations astrologer_specializations[]
 }
 
+model support_ticket_messages {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticket_id       String          @db.Uuid
+  sender_type     String          @default("CUSTOMER") @db.VarChar(20)
+  sender_id       BigInt?
+  message         String
+  is_internal     Boolean?        @default(false)
+  created_at      DateTime?       @default(now()) @db.Timestamptz(6)
+  support_tickets support_tickets @relation(fields: [ticket_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([ticket_id, created_at], map: "idx_ticket_msgs_ticket")
+}
+
+model support_tickets {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticket_number           String                    @unique @db.VarChar(30)
+  user_id                 BigInt
+  category                String                    @default("ACCOUNT") @db.VarChar(50)
+  subject                 String                    @db.VarChar(200)
+  description             String
+  status                  String                    @default("OPEN") @db.VarChar(20)
+  priority                String                    @default("MEDIUM") @db.VarChar(20)
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  support_ticket_messages support_ticket_messages[]
+  users                   users                     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([status], map: "idx_tickets_status")
+  @@index([user_id, created_at(sort: Desc)], map: "idx_tickets_user")
+}
+
 model tbl_dms_basepath {
   dms_basepath_id Int             @id @default(autoincrement())
   dms_base_path   String          @db.VarChar(1000)
@@ -455,6 +821,21 @@ model tbl_dms_items {
   tbl_dms_basepath                     tbl_dms_basepath?                      @relation(fields: [basepath_id], references: [dms_basepath_id], onDelete: NoAction, onUpdate: NoAction)
   tbl_dms_category                     tbl_dms_category?                      @relation(fields: [category_id], references: [dms_category_id], onDelete: NoAction, onUpdate: NoAction)
   users                                users?                                 @relation(fields: [created_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user_consents {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          BigInt
+  consent_type     String    @db.VarChar(50)
+  document_version String    @default("1.0") @db.VarChar(20)
+  is_granted       Boolean   @default(true)
+  channel          String?   @default("APP") @db.VarChar(30)
+  ip_address       String?   @db.VarChar(45)
+  user_agent       String?
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  users            users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, consent_type, created_at(sort: Desc)], map: "idx_consents_user_type")
 }
 
 model user_consultation_sessions_detail {
@@ -576,10 +957,14 @@ model users {
   account_deletion_requests                            account_deletion_requests[]
   admin_details                                        admin_details?
   appointments                                         appointments[]
+  astrologer_documents                                 astrologer_documents[]
   astrologer_kyc                                       astrologer_kyc[]
+  astrologer_qualifications                            astrologer_qualifications[]
   astrologer_service_request_master                    astrologer_service_request_master[]
   astrologer_services                                  astrologer_services[]
-  astrologers                                          astrologers?
+  astrologer_status_history                            astrologer_status_history[]
+  astrologers_astrologers_reviewed_byTousers           astrologers[]                       @relation("astrologers_reviewed_byTousers")
+  astrologers_astrologers_user_idTousers               astrologers?                        @relation("astrologers_user_idTousers")
   auth_audit_logs                                      auth_audit_logs[]
   broadcast_participants                               broadcast_participants[]
   customer_details_customer_details_referred_byTousers customer_details[]                  @relation("customer_details_referred_byTousers")
@@ -590,6 +975,10 @@ model users {
   favorite_astrologers                                 favorite_astrologers[]
   kundli_profiles                                      kundli_profiles[]
   payment_transactions                                 payment_transactions[]
+  pooja_booking_audit                                  pooja_booking_audit[]
+  pooja_bookings                                       pooja_bookings[]
+  pooja_quotes                                         pooja_quotes[]
+  priests                                              priests[]
   referrals_referrals_referred_user_idTousers          referrals?                          @relation("referrals_referred_user_idTousers")
   referrals_referrals_referrer_user_idTousers          referrals[]                         @relation("referrals_referrer_user_idTousers")
   reviews                                              reviews[]
@@ -629,77 +1018,4 @@ model wallets {
   created_on          DateTime?             @default(now()) @db.Timestamptz(6)
   wallet_transactions wallet_transactions[]
   users               users                 @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model account_deletion_requests {
-  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id            BigInt
-  status             String    @default("PENDING") @db.VarChar(20)
-  reason             String?
-  scheduled_purge_at DateTime  @db.Timestamptz(6)
-  executed_at        DateTime? @db.Timestamptz(6)
-  created_at         DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime? @default(now()) @db.Timestamptz(6)
-  users              users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([user_id, status], map: "idx_del_req_user_status")
-}
-
-model customer_recent_astrologers {
-  id                 String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id            BigInt
-  astrologer_id      BigInt
-  interaction_type   String?     @default("VIEW") @db.VarChar(30)
-  last_interacted_at DateTime?   @default(now()) @db.Timestamptz(6)
-  astrologers        astrologers @relation(fields: [astrologer_id], references: [astrologer_id], onDelete: Cascade, onUpdate: NoAction)
-  users              users       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@unique([user_id, astrologer_id], map: "uq_recent_astrologers")
-  @@index([user_id, last_interacted_at(sort: Desc)], map: "idx_recent_astrologers")
-}
-
-model support_ticket_messages {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  ticket_id       String          @db.Uuid
-  sender_type     String          @default("CUSTOMER") @db.VarChar(20)
-  sender_id       BigInt?
-  message         String
-  is_internal     Boolean?        @default(false)
-  created_at      DateTime?       @default(now()) @db.Timestamptz(6)
-  support_tickets support_tickets @relation(fields: [ticket_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([ticket_id, created_at], map: "idx_ticket_msgs_ticket")
-}
-
-model support_tickets {
-  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  ticket_number           String                    @unique @db.VarChar(30)
-  user_id                 BigInt
-  category                String                    @default("ACCOUNT") @db.VarChar(50)
-  subject                 String                    @db.VarChar(200)
-  description             String
-  status                  String                    @default("OPEN") @db.VarChar(20)
-  priority                String                    @default("MEDIUM") @db.VarChar(20)
-  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
-  updated_at              DateTime?                 @default(now()) @db.Timestamptz(6)
-  support_ticket_messages support_ticket_messages[]
-  users                   users                     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([status], map: "idx_tickets_status")
-  @@index([user_id, created_at(sort: Desc)], map: "idx_tickets_user")
-}
-
-model user_consents {
-  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id          BigInt
-  consent_type     String    @db.VarChar(50)
-  document_version String    @default("1.0") @db.VarChar(20)
-  is_granted       Boolean   @default(true)
-  channel          String?   @default("APP") @db.VarChar(30)
-  ip_address       String?   @db.VarChar(45)
-  user_agent       String?
-  created_at       DateTime? @default(now()) @db.Timestamptz(6)
-  users            users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([user_id, consent_type, created_at(sort: Desc)], map: "idx_consents_user_type")
 }

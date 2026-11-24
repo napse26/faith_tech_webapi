@@ -9,6 +9,7 @@ export interface AuthenticatedUser {
   sessionId: string;
   mobileNumber: string;
   role: string;
+  roles: string[];
   status: string;
 }
 
@@ -83,7 +84,8 @@ export async function authenticate(
       return;
     }
 
-    const primaryRole = user.user_roles[0]?.roles?.role_name || 'CUSTOMER';
+    const userRoles = user.user_roles.map(ur => ur.roles?.role_name).filter(Boolean) as string[];
+    const primaryRole = userRoles[0] || 'CUSTOMER';
 
     req.user = {
       id: user.user_id.toString(),
@@ -91,6 +93,7 @@ export async function authenticate(
       sessionId: payload.sid,
       mobileNumber: user.mobile_no,
       role: primaryRole,
+      roles: userRoles.length > 0 ? userRoles : ['CUSTOMER'],
       status: accountStatus
     };
 
@@ -98,4 +101,82 @@ export async function authenticate(
   } catch (error) {
     next(error);
   }
+}
+
+export function requireRole(...allowedRoles: string[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      next(new UnauthorizedError('Authentication required', 'UNAUTHORIZED'));
+      return;
+    }
+
+    const userRoles = req.user.roles || [req.user.role];
+    const hasRole = allowedRoles.some(role => userRoles.includes(role));
+
+    if (!hasRole) {
+      next(new ForbiddenError(`Access denied. Required roles: ${allowedRoles.join(', ')}`, 'FORBIDDEN'));
+      return;
+    }
+
+    next();
+  };
+}
+
+export async function optionalAuthenticate(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    next();
+    return;
+  }
+
+  const token = authHeader.substring(7).trim();
+
+  try {
+    const payload = sessionService.verifyAccessToken(token);
+
+    const session = await prisma.user_sessions.findUnique({
+      where: { id: payload.sid },
+      select: { id: true, revoked_at: true, expires_at: true }
+    });
+
+    if (!session || session.revoked_at !== null || session.expires_at < new Date()) {
+      next();
+      return;
+    }
+
+    const user = await prisma.users.findUnique({
+      where: { user_id: BigInt(payload.sub) },
+      include: {
+        user_roles: {
+          include: {
+            roles: true
+          }
+        }
+      }
+    });
+
+    if (user) {
+      const userRoles = user.user_roles.map(ur => ur.roles?.role_name).filter(Boolean) as string[];
+      const primaryRole = userRoles[0] || 'CUSTOMER';
+
+      req.user = {
+        id: user.user_id.toString(),
+        userId: user.user_id,
+        sessionId: payload.sid,
+        mobileNumber: user.mobile_no,
+        role: primaryRole,
+        roles: userRoles.length > 0 ? userRoles : ['CUSTOMER'],
+        status: user.status || (user.is_active ? 'ACTIVE' : 'INACTIVE')
+      };
+    }
+  } catch {
+    // Ignore invalid token on optional auth
+  }
+
+  next();
 }

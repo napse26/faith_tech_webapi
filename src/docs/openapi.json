@@ -2104,6 +2104,3989 @@
           }
         }
       }
+    },
+    "/api/v1/astrologers": {
+      "get": {
+        "tags": [
+          "Astrologer Discovery (Public)"
+        ],
+        "summary": "Discover and filter approved astrologers",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gender",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "MALE",
+                "FEMALE",
+                "OTHER"
+              ]
+            }
+          },
+          {
+            "name": "specializationId",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "languageId",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "isOnline",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "rating",
+                "experience",
+                "price_asc",
+                "price_desc"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of approved astrologers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/{astrologerId}/profile": {
+      "get": {
+        "tags": [
+          "Astrologer Discovery (Public)"
+        ],
+        "summary": "Get public astrologer profile and services",
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public astrologer profile details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/{astrologerId}/availability": {
+      "get": {
+        "tags": [
+          "Astrologer Discovery (Public)"
+        ],
+        "summary": "Get public astrologer availability schedule",
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Astrologer availability schedule and exceptions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/apply": {
+      "post": {
+        "tags": [
+          "Astrologer Application & Onboarding"
+        ],
+        "summary": "Initiate an astrologer application draft",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "displayName"
+                ],
+                "properties": {
+                  "displayName": {
+                    "type": "string",
+                    "example": "Pandit Sharma"
+                  },
+                  "legalName": {
+                    "type": "string",
+                    "example": "Rameshwar Sharma"
+                  },
+                  "gender": {
+                    "type": "string",
+                    "enum": [
+                      "MALE",
+                      "FEMALE",
+                      "OTHER"
+                    ]
+                  },
+                  "experienceYears": {
+                    "type": "integer",
+                    "example": 12
+                  },
+                  "qualification": {
+                    "type": "string",
+                    "example": "Acharya in Jyotish"
+                  },
+                  "aboutMe": {
+                    "type": "string",
+                    "example": "Vedic astrology practitioner with 12+ years experience."
+                  },
+                  "astrologyTradition": {
+                    "type": "string",
+                    "example": "Parashari Vedic"
+                  },
+                  "city": {
+                    "type": "string",
+                    "example": "Varanasi"
+                  },
+                  "state": {
+                    "type": "string",
+                    "example": "Uttar Pradesh"
+                  },
+                  "country": {
+                    "type": "string",
+                    "default": "India"
+                  },
+                  "timezone": {
+                    "type": "string",
+                    "default": "Asia/Kolkata"
+                  },
+                  "specializationIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "example": [
+                      1,
+                      2
+                    ]
+                  },
+                  "languageIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "example": [
+                      1,
+                      2
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Application draft created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/application": {
+      "get": {
+        "tags": [
+          "Astrologer Application & Onboarding"
+        ],
+        "summary": "Get own application draft & completion score",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Application details and percentage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Astrologer Application & Onboarding"
+        ],
+        "summary": "Update application draft details",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "displayName": {
+                    "type": "string"
+                  },
+                  "legalName": {
+                    "type": "string"
+                  },
+                  "gender": {
+                    "type": "string"
+                  },
+                  "experienceYears": {
+                    "type": "integer"
+                  },
+                  "aboutMe": {
+                    "type": "string"
+                  },
+                  "city": {
+                    "type": "string"
+                  },
+                  "state": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Application draft updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/application/submit": {
+      "post": {
+        "tags": [
+          "Astrologer Application & Onboarding"
+        ],
+        "summary": "Submit astrologer application for admin review",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Application submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/application/resubmit": {
+      "post": {
+        "tags": [
+          "Astrologer Application & Onboarding"
+        ],
+        "summary": "Resubmit application after making requested changes",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Application resubmitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/application/status": {
+      "get": {
+        "tags": [
+          "Astrologer Application & Onboarding"
+        ],
+        "summary": "Get application review status & audit history",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current onboarding status, notes, and transition timeline",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/profile": {
+      "get": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Get authenticated astrologer profile",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Update astrologer profile details",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "displayName": {
+                    "type": "string"
+                  },
+                  "aboutMe": {
+                    "type": "string"
+                  },
+                  "experienceYears": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/profile/photo": {
+      "post": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Update profile or cover photo URL",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "photoType",
+                  "photoUrl"
+                ],
+                "properties": {
+                  "photoType": {
+                    "type": "string",
+                    "enum": [
+                      "PROFILE",
+                      "COVER"
+                    ]
+                  },
+                  "photoUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Photo updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Remove profile or cover photo",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "photoType",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PROFILE",
+                "COVER"
+              ],
+              "default": "PROFILE"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Photo removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/expertise": {
+      "get": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Get specializations and languages",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Expertise list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Update specializations and languages",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "specializationIds",
+                  "languageIds"
+                ],
+                "properties": {
+                  "specializationIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "languageIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Expertise updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/services": {
+      "get": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "List offered consultation services",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Services list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Add a consultation service",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "serviceMasterId"
+                ],
+                "properties": {
+                  "serviceMasterId": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "integer",
+                    "default": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Service added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/services/{serviceId}": {
+      "put": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Update service status",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "integer",
+                    "enum": [
+                      0,
+                      1
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Delete service from profile",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/pricing": {
+      "get": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Get consultation pricing rates",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pricing rates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Update consultation rates (chat, call, video)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "chatRate": {
+                    "type": "number",
+                    "example": 25
+                  },
+                  "callRate": {
+                    "type": "number",
+                    "example": 30
+                  },
+                  "videoRate": {
+                    "type": "number",
+                    "example": 45
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pricing rates updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/qualifications": {
+      "get": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Get qualifications",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Qualifications list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Add qualification",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "qualificationName",
+                  "institution"
+                ],
+                "properties": {
+                  "qualificationName": {
+                    "type": "string",
+                    "example": "Jyotish Visharad"
+                  },
+                  "institution": {
+                    "type": "string",
+                    "example": "SSU Varanasi"
+                  },
+                  "yearOfCompletion": {
+                    "type": "integer",
+                    "example": 2018
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "certificateUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Qualification added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/qualifications/{qualificationId}": {
+      "put": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Update qualification",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "qualificationName": {
+                    "type": "string"
+                  },
+                  "institution": {
+                    "type": "string"
+                  },
+                  "yearOfCompletion": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Qualification updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Delete qualification",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Qualification deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/documents": {
+      "get": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Get verification documents",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documents list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Upload document metadata",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "documentType",
+                  "documentName",
+                  "fileUrl"
+                ],
+                "properties": {
+                  "documentType": {
+                    "type": "string",
+                    "example": "AADHAAR"
+                  },
+                  "documentName": {
+                    "type": "string",
+                    "example": "Aadhaar Card Front & Back"
+                  },
+                  "fileUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "fileSize": {
+                    "type": "integer"
+                  },
+                  "mimeType": {
+                    "type": "string",
+                    "default": "application/pdf"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Document uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/documents/{documentId}": {
+      "get": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Get document details",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Delete document (only if not verified)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/payout": {
+      "get": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Get masked bank and payout details",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Masked payout details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Update bank and payout details",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "payoutMethod": {
+                    "type": "string",
+                    "enum": [
+                      "BANK_TRANSFER",
+                      "UPI"
+                    ],
+                    "default": "BANK_TRANSFER"
+                  },
+                  "panNumber": {
+                    "type": "string",
+                    "example": "ABCDE1234F"
+                  },
+                  "accountHolderName": {
+                    "type": "string",
+                    "example": "Pandit Sharma"
+                  },
+                  "accountNumber": {
+                    "type": "string",
+                    "example": "123456789012"
+                  },
+                  "bankName": {
+                    "type": "string",
+                    "example": "HDFC Bank"
+                  },
+                  "ifscCode": {
+                    "type": "string",
+                    "example": "HDFC0001234"
+                  },
+                  "upiId": {
+                    "type": "string",
+                    "example": "pandit@upi"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payout details updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/availability": {
+      "get": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Get weekly availability and exceptions",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Availability schedule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Set weekly availability slots",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "slots"
+                ],
+                "properties": {
+                  "timezone": {
+                    "type": "string",
+                    "default": "Asia/Kolkata"
+                  },
+                  "slots": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "dayOfWeek",
+                        "startTime",
+                        "endTime"
+                      ],
+                      "properties": {
+                        "dayOfWeek": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 6
+                        },
+                        "startTime": {
+                          "type": "string",
+                          "example": "09:00"
+                        },
+                        "endTime": {
+                          "type": "string",
+                          "example": "17:00"
+                        },
+                        "slotDurationMinutes": {
+                          "type": "integer",
+                          "default": 15
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Weekly availability updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/availability/exceptions": {
+      "post": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Add availability date exception (override)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "exceptionDate",
+                  "isAvailable"
+                ],
+                "properties": {
+                  "exceptionDate": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-12-01"
+                  },
+                  "isAvailable": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "startTime": {
+                    "type": "string",
+                    "example": "10:00"
+                  },
+                  "endTime": {
+                    "type": "string",
+                    "example": "14:00"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "example": "Festival holiday"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Date exception added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/availability/exceptions/{exceptionId}": {
+      "delete": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Remove availability date exception",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "exceptionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Date exception deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/status": {
+      "get": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Get online / operational status",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status (isOnline, isBusy)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Toggle online / busy status (APPROVED astrologers only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "isOnline"
+                ],
+                "properties": {
+                  "isOnline": {
+                    "type": "boolean"
+                  },
+                  "isBusy": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Online status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/dashboard": {
+      "get": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Get astrologer dashboard metrics, earnings, and ratings",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Astrologer dashboard summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/astrologers": {
+      "get": {
+        "tags": [
+          "Admin - Astrologer Lifecycle"
+        ],
+        "summary": "List astrologer applications with status filter",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Applications list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/astrologers/{astrologerId}": {
+      "get": {
+        "tags": [
+          "Admin - Astrologer Lifecycle"
+        ],
+        "summary": "Get full astrologer application details",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Application details, KYC, qualifications, and documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/astrologers/{astrologerId}/audit-history": {
+      "get": {
+        "tags": [
+          "Admin - Astrologer Lifecycle"
+        ],
+        "summary": "Get astrologer status transition audit trail",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status audit log",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/astrologers/{astrologerId}/review": {
+      "post": {
+        "tags": [
+          "Admin - Astrologer Lifecycle"
+        ],
+        "summary": "Mark application UNDER_REVIEW",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Application marked UNDER_REVIEW",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/astrologers/{astrologerId}/request-changes": {
+      "post": {
+        "tags": [
+          "Admin - Astrologer Lifecycle"
+        ],
+        "summary": "Request changes from astrologer (ACTION_REQUIRED)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "notes",
+                  "actionRequiredFields"
+                ],
+                "properties": {
+                  "notes": {
+                    "type": "string",
+                    "example": "Please upload a clearer copy of your ID proof."
+                  },
+                  "actionRequiredFields": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "documents"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Changes requested",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/astrologers/{astrologerId}/approve": {
+      "post": {
+        "tags": [
+          "Admin - Astrologer Lifecycle"
+        ],
+        "summary": "Approve astrologer application and grant ASTROLOGER role",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "notes": {
+                    "type": "string"
+                  },
+                  "commissionPercentage": {
+                    "type": "number",
+                    "example": 20
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Application approved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/astrologers/{astrologerId}/reject": {
+      "post": {
+        "tags": [
+          "Admin - Astrologer Lifecycle"
+        ],
+        "summary": "Reject astrologer application with reason",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "reason"
+                ],
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "example": "Incomplete credentials and unverifiable experience."
+                  },
+                  "adminNotes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Application rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/astrologers/{astrologerId}/suspend": {
+      "post": {
+        "tags": [
+          "Admin - Astrologer Lifecycle"
+        ],
+        "summary": "Suspend an astrologer account",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "reason"
+                ],
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Astrologer suspended",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/astrologers/{astrologerId}/reactivate": {
+      "post": {
+        "tags": [
+          "Admin - Astrologer Lifecycle"
+        ],
+        "summary": "Reactivate suspended astrologer account",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Astrologer reactivated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/astrologers/{astrologerId}/documents/{docId}/verify": {
+      "post": {
+        "tags": [
+          "Admin - Astrologer Lifecycle"
+        ],
+        "summary": "Verify or reject uploaded document",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "docId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "VERIFIED",
+                      "REJECTED"
+                    ]
+                  },
+                  "rejectionReason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document verification status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/poojas/categories": {
+      "get": {
+        "tags": [
+          "Online Pooja Catalog (Public)"
+        ],
+        "summary": "List active pooja categories",
+        "responses": {
+          "200": {
+            "description": "Categories list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/poojas": {
+      "get": {
+        "tags": [
+          "Online Pooja Catalog (Public)"
+        ],
+        "summary": "Discover and search pooja catalog",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deliveryMode",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ONLINE",
+                "TEMPLE",
+                "HOME"
+              ]
+            }
+          },
+          {
+            "name": "isFeatured",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of published poojas with starting prices",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/poojas/{poojaIdOrSlug}": {
+      "get": {
+        "tags": [
+          "Online Pooja Catalog (Public)"
+        ],
+        "summary": "Get full pooja details, packages, and addons",
+        "parameters": [
+          {
+            "name": "poojaIdOrSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pooja details with packages, addons, benefits, and ritual steps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/poojas/{poojaId}/packages": {
+      "get": {
+        "tags": [
+          "Online Pooja Catalog (Public)"
+        ],
+        "summary": "Get active packages for a pooja",
+        "parameters": [
+          {
+            "name": "poojaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of pooja packages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/poojas/{poojaId}/addons": {
+      "get": {
+        "tags": [
+          "Online Pooja Catalog (Public)"
+        ],
+        "summary": "Get active add-ons for a pooja",
+        "parameters": [
+          {
+            "name": "poojaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of pooja addons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/poojas/{poojaId}/availability": {
+      "get": {
+        "tags": [
+          "Online Pooja Catalog (Public)"
+        ],
+        "summary": "Get available dates for pooja booking",
+        "parameters": [
+          {
+            "name": "poojaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available calendar dates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/poojas/{poojaId}/slots": {
+      "get": {
+        "tags": [
+          "Online Pooja Catalog (Public)"
+        ],
+        "summary": "Get time slots and remaining capacity for a date",
+        "parameters": [
+          {
+            "name": "poojaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Time slots with availability status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/poojas/{poojaId}/requirements": {
+      "get": {
+        "tags": [
+          "Online Pooja Catalog (Public)"
+        ],
+        "summary": "Get devotee & sankalp field requirements and guidelines",
+        "parameters": [
+          {
+            "name": "poojaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Requirements and guidelines",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/poojas/priests": {
+      "get": {
+        "tags": [
+          "Online Pooja Catalog (Public)"
+        ],
+        "summary": "List qualified priests",
+        "responses": {
+          "200": {
+            "description": "Priests list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/poojas/priests/{priestId}": {
+      "get": {
+        "tags": [
+          "Online Pooja Catalog (Public)"
+        ],
+        "summary": "Get priest biography and qualifications",
+        "parameters": [
+          {
+            "name": "priestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Priest details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pooja-bookings/quotes": {
+      "post": {
+        "tags": [
+          "Online Pooja Bookings & Quotes (Customer)"
+        ],
+        "summary": "Generate booking quote with 15-minute slot reservation",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "poojaId",
+                  "packageId",
+                  "slotId",
+                  "deliveryMode",
+                  "devotees"
+                ],
+                "properties": {
+                  "poojaId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "packageId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "slotId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "deliveryMode": {
+                    "type": "string",
+                    "enum": [
+                      "ONLINE",
+                      "TEMPLE",
+                      "HOME"
+                    ],
+                    "default": "ONLINE"
+                  },
+                  "devotees": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "example": "Ramesh Kumar"
+                        },
+                        "relationship": {
+                          "type": "string",
+                          "example": "Self"
+                        },
+                        "gotra": {
+                          "type": "string",
+                          "example": "Kashyap"
+                        },
+                        "rashi": {
+                          "type": "string",
+                          "example": "Mesha"
+                        }
+                      }
+                    }
+                  },
+                  "sankalpDetails": {
+                    "type": "object",
+                    "required": [
+                      "sankalpPurpose"
+                    ],
+                    "properties": {
+                      "sankalpPurpose": {
+                        "type": "string",
+                        "example": "Health, wealth, and family harmony"
+                      },
+                      "kuldeviDevta": {
+                        "type": "string",
+                        "example": "Maa Durga"
+                      },
+                      "wishes": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "addons": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "addonId",
+                        "quantity"
+                      ],
+                      "properties": {
+                        "addonId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "default": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Quote generated with price breakdown and 15-minute expiry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pooja-bookings/quotes/{quoteId}": {
+      "get": {
+        "tags": [
+          "Online Pooja Bookings & Quotes (Customer)"
+        ],
+        "summary": "Get quote details and remaining validity seconds",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "quoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Quote details and expiration status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pooja-bookings": {
+      "post": {
+        "tags": [
+          "Online Pooja Bookings & Quotes (Customer)"
+        ],
+        "summary": "Confirm reservation and create booking from valid quote",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "quoteId"
+                ],
+                "properties": {
+                  "quoteId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "customerAddress": {
+                    "type": "string",
+                    "example": "Flat 101, Om Shanti Towers, Mumbai"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking created in PENDING_PAYMENT status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Online Pooja Bookings & Quotes (Customer)"
+        ],
+        "summary": "List devotee booking history",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer booking history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pooja-bookings/{bookingId}": {
+      "get": {
+        "tags": [
+          "Online Pooja Bookings & Quotes (Customer)"
+        ],
+        "summary": "Get complete booking details",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking details with priest, live session, and payment status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pooja-bookings/{bookingId}/payment": {
+      "post": {
+        "tags": [
+          "Online Pooja Bookings & Quotes (Customer)"
+        ],
+        "summary": "Confirm payment and transition booking to CONFIRMED",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "paymentMethod": {
+                    "type": "string",
+                    "default": "UPI"
+                  },
+                  "transactionId": {
+                    "type": "string",
+                    "example": "UPI-REF-99887766"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment verified and booking confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pooja-bookings/{bookingId}/cancel": {
+      "post": {
+        "tags": [
+          "Online Pooja Bookings & Quotes (Customer)"
+        ],
+        "summary": "Cancel booking and compute policy refund",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "reason"
+                ],
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "example": "Unavoidable family travel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking cancelled, slot released, and refund computed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pooja-bookings/{bookingId}/reschedule": {
+      "post": {
+        "tags": [
+          "Online Pooja Bookings & Quotes (Customer)"
+        ],
+        "summary": "Reschedule booking with atomic slot swap",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "newSlotId"
+                ],
+                "properties": {
+                  "newSlotId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "example": "Preferred morning slot"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking rescheduled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pooja-bookings/{bookingId}/receipt": {
+      "get": {
+        "tags": [
+          "Online Pooja Bookings & Quotes (Customer)"
+        ],
+        "summary": "Get digital invoice & booking receipt",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Itemized invoice receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pooja-bookings/{bookingId}/live-session": {
+      "get": {
+        "tags": [
+          "Online Pooja Bookings & Quotes (Customer)"
+        ],
+        "summary": "Get live session streaming credentials and instructions",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live video stream URL and join instructions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pooja-bookings/{bookingId}/feedback": {
+      "post": {
+        "tags": [
+          "Online Pooja Bookings & Quotes (Customer)"
+        ],
+        "summary": "Submit devotee rating and review for completed pooja",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "rating"
+                ],
+                "properties": {
+                  "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                  },
+                  "comment": {
+                    "type": "string",
+                    "example": "Very spiritually fulfilling ceremony conducted by Pandit ji."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Feedback submitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/poojas": {
+      "get": {
+        "tags": [
+          "Admin - Online Pooja & Bookings"
+        ],
+        "summary": "List all poojas (including DRAFT, INACTIVE)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pooja list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Admin - Online Pooja & Bookings"
+        ],
+        "summary": "Create new pooja ritual in catalog",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "categoryId",
+                  "title",
+                  "slug"
+                ],
+                "properties": {
+                  "categoryId": {
+                    "type": "integer"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "slug": {
+                    "type": "string"
+                  },
+                  "shortDescription": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "significance": {
+                    "type": "string"
+                  },
+                  "benefits": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "ritualSteps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "samagriInfo": {
+                    "type": "string"
+                  },
+                  "instructions": {
+                    "type": "string"
+                  },
+                  "supportedLanguages": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "deliveryModes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "templeName": {
+                    "type": "string"
+                  },
+                  "templeLocation": {
+                    "type": "string"
+                  },
+                  "imageUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "bannerUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "durationMinutes": {
+                    "type": "integer",
+                    "default": 60
+                  },
+                  "leadTimeHours": {
+                    "type": "integer",
+                    "default": 24
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "DRAFT",
+                      "PUBLISHED",
+                      "INACTIVE",
+                      "ARCHIVED"
+                    ],
+                    "default": "DRAFT"
+                  },
+                  "isFeatured": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pooja created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/poojas/{poojaId}": {
+      "put": {
+        "tags": [
+          "Admin - Online Pooja & Bookings"
+        ],
+        "summary": "Update pooja details",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "poojaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "shortDescription": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "DRAFT",
+                      "PUBLISHED",
+                      "INACTIVE",
+                      "ARCHIVED"
+                    ]
+                  },
+                  "isFeatured": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pooja updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/poojas/{poojaId}/status": {
+      "patch": {
+        "tags": [
+          "Admin - Online Pooja & Bookings"
+        ],
+        "summary": "Change pooja publish status",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "poojaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "DRAFT",
+                      "PUBLISHED",
+                      "INACTIVE",
+                      "ARCHIVED"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/poojas/{poojaId}/packages": {
+      "post": {
+        "tags": [
+          "Admin - Online Pooja & Bookings"
+        ],
+        "summary": "Create package for a pooja",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "poojaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "price"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "price": {
+                    "type": "number"
+                  },
+                  "discountPrice": {
+                    "type": "number"
+                  },
+                  "durationMinutes": {
+                    "type": "integer",
+                    "default": 60
+                  },
+                  "maxDevotees": {
+                    "type": "integer",
+                    "default": 4
+                  },
+                  "samagriIncluded": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "deliveryMode": {
+                    "type": "string",
+                    "default": "ONLINE"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Package created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/poojas/{poojaId}/addons": {
+      "post": {
+        "tags": [
+          "Admin - Online Pooja & Bookings"
+        ],
+        "summary": "Create add-on item for a pooja",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "poojaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "price"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "price": {
+                    "type": "number"
+                  },
+                  "maxQuantity": {
+                    "type": "integer",
+                    "default": 10
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Add-on created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/poojas/{poojaId}/slots/bulk": {
+      "post": {
+        "tags": [
+          "Admin - Online Pooja & Bookings"
+        ],
+        "summary": "Bulk generate calendar time slots for a pooja",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "poojaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "startDate",
+                  "endDate",
+                  "startTime",
+                  "endTime"
+                ],
+                "properties": {
+                  "startDate": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-12-01"
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-12-31"
+                  },
+                  "startTime": {
+                    "type": "string",
+                    "example": "08:00"
+                  },
+                  "endTime": {
+                    "type": "string",
+                    "example": "09:30"
+                  },
+                  "maxCapacity": {
+                    "type": "integer",
+                    "default": 5
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Bulk slots generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pooja-bookings": {
+      "get": {
+        "tags": [
+          "Admin - Online Pooja & Bookings"
+        ],
+        "summary": "List all bookings across the platform",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "poojaId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "priestId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin bookings list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pooja-bookings/{bookingId}": {
+      "get": {
+        "tags": [
+          "Admin - Online Pooja & Bookings"
+        ],
+        "summary": "Get admin view of booking",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pooja-bookings/{bookingId}/assign-priest": {
+      "post": {
+        "tags": [
+          "Admin - Online Pooja & Bookings"
+        ],
+        "summary": "Assign or reassign priest to booking",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "priestId"
+                ],
+                "properties": {
+                  "priestId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Priest assigned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pooja-bookings/{bookingId}/status": {
+      "patch": {
+        "tags": [
+          "Admin - Online Pooja & Bookings"
+        ],
+        "summary": "Update booking status (CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, REFUNDED)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "CONFIRMED",
+                      "IN_PROGRESS",
+                      "COMPLETED",
+                      "CANCELLED",
+                      "REFUNDED"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pooja-bookings/{bookingId}/live-stream": {
+      "patch": {
+        "tags": [
+          "Admin - Online Pooja & Bookings"
+        ],
+        "summary": "Configure live stream video meeting link",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "liveStreamUrl"
+                ],
+                "properties": {
+                  "liveStreamUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "liveStreamNotes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Live stream link updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pooja-bookings/{bookingId}/refund": {
+      "post": {
+        "tags": [
+          "Admin - Online Pooja & Bookings"
+        ],
+        "summary": "Process refund for booking",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "refundAmount"
+                ],
+                "properties": {
+                  "refundAmount": {
+                    "type": "number"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Refund processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pooja-bookings/{bookingId}/audit": {
+      "get": {
+        "tags": [
+          "Admin - Online Pooja & Bookings"
+        ],
+        "summary": "Get booking status transition audit trail",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking audit history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "Astrologer Discovery (Public)",
+      "description": "Public astrologer discovery and profile lookup"
+    },
+    {
+      "name": "Astrologer Application & Onboarding",
+      "description": "Astrologer self onboarding lifecycle"
+    },
+    {
+      "name": "Astrologer Profile & Operations",
+      "description": "Astrologer profile, availability, payout, and dashboard"
+    },
+    {
+      "name": "Admin - Astrologer Lifecycle",
+      "description": "Admin review, approval, suspension, and verification of astrologers"
+    },
+    {
+      "name": "Online Pooja Catalog (Public)",
+      "description": "Pooja categories, packages, add-ons, availability, and priests"
+    },
+    {
+      "name": "Online Pooja Bookings & Quotes (Customer)",
+      "description": "Devotee quote generation, booking creation, payments, rescheduling, and live stream"
+    },
+    {
+      "name": "Admin - Online Pooja & Bookings",
+      "description": "Admin pooja catalog, packages, slots generation, and priest assignment"
+    }
+  ]
 }
