@@ -21,12 +21,26 @@ class PoojaController {
             const page = req.query.page ? parseInt(req.query.page, 10) : 1;
             const limit = req.query.limit ? parseInt(req.query.limit, 10) : 10;
             const categoryId = req.query.categoryId ? parseInt(req.query.categoryId, 10) : undefined;
+            const category = req.query.category ? req.query.category : undefined;
             const isFeatured = req.query.isFeatured !== undefined ? req.query.isFeatured === 'true' : undefined;
+            const isScheduled = req.query.isScheduled !== undefined ? req.query.isScheduled === 'true' : undefined;
+            const liveStreamingOnly = req.query.liveStreamingOnly !== undefined ? req.query.liveStreamingOnly === 'true' : undefined;
+            const minRating = req.query.minRating ? parseFloat(req.query.minRating) : undefined;
+            const sankalpFee = req.query.sankalpFee;
+            const minPrice = req.query.minPrice ? parseFloat(req.query.minPrice) : undefined;
+            const maxPrice = req.query.maxPrice ? parseFloat(req.query.maxPrice) : undefined;
             const result = await pooja_service_1.poojaService.listPoojas({
                 page,
                 limit,
                 categoryId,
+                category,
                 isFeatured,
+                isScheduled,
+                liveStreamingOnly,
+                minRating,
+                sankalpFee,
+                minPrice,
+                maxPrice,
                 language: req.query.language,
                 deliveryMode: req.query.deliveryMode,
                 search: req.query.search
@@ -218,6 +232,47 @@ class PoojaController {
         try {
             const priest = await pooja_service_1.poojaService.getPriestDetails(req.params.priestId);
             res.status(200).json((0, api_response_1.createSuccessResponse)(priest, 'Priest details retrieved successfully', req.traceId));
+        }
+        catch (error) {
+            next(error);
+        }
+    }
+    // =========================================================================
+    // 5. DEVOTEE REVIEWS & CHECKOUT CONTEXT
+    // =========================================================================
+    async getPoojaReviews(req, res, next) {
+        try {
+            const page = req.query.page ? parseInt(req.query.page, 10) : 1;
+            const limit = req.query.limit ? parseInt(req.query.limit, 10) : 10;
+            const reviews = await pooja_service_1.poojaService.getPoojaReviews(req.params.poojaIdOrSlug, page, limit);
+            res.status(200).json((0, api_response_1.createSuccessResponse)(reviews, 'Pooja devotee reviews retrieved successfully', req.traceId));
+        }
+        catch (error) {
+            next(error);
+        }
+    }
+    async submitPoojaReview(req, res, next) {
+        try {
+            const review = await pooja_service_1.poojaService.submitPoojaReview(req.user.userId, req.params.poojaId, req.body);
+            res.status(201).json((0, api_response_1.createSuccessResponse)(review, review.message, req.traceId));
+        }
+        catch (error) {
+            next(error);
+        }
+    }
+    async getCheckoutContext(req, res, next) {
+        try {
+            const context = await pooja_service_1.poojaService.getCheckoutContext(req.user.userId, req.params.poojaId);
+            res.status(200).json((0, api_response_1.createSuccessResponse)(context, 'Checkout context retrieved with family profiles and wallet info', req.traceId));
+        }
+        catch (error) {
+            next(error);
+        }
+    }
+    async addCheckoutFamilyMember(req, res, next) {
+        try {
+            const member = await pooja_service_1.poojaService.addCheckoutFamilyMember(req.user.userId, req.body);
+            res.status(201).json((0, api_response_1.createSuccessResponse)(member, member.message, req.traceId));
         }
         catch (error) {
             next(error);

@@ -10,6 +10,7 @@ export type PoojaBookingStatus =
   | 'REFUNDED';
 
 export interface DevoteeDetail {
+  profileId?: string | number;
   name: string;
   relationship?: string;
   gender?: string;
@@ -35,7 +36,10 @@ export interface AddonItemSelection {
 export interface GenerateQuoteDto {
   poojaId: string;
   packageId: string;
-  slotId: string;
+  slotId?: string; // Optional for personal/custom poojas
+  isScheduled?: boolean; // true = scheduled (slotId required), false = personal
+  preferredDate?: string; // For personal pooja (YYYY-MM-DD)
+  preferredTime?: string; // For personal pooja (e.g. "07:00 AM" or "18:00:00")
   deliveryMode: string; // 'ONLINE' | 'TEMPLE' | 'HOME'
   addons?: AddonItemSelection[];
   devotees: DevoteeDetail[];
@@ -48,7 +52,9 @@ export interface CreateBookingDto {
 }
 
 export interface RescheduleBookingDto {
-  newSlotId: string;
+  newSlotId?: string;
+  preferredDate?: string;
+  preferredTime?: string;
   reason?: string;
 }
 
@@ -66,10 +72,29 @@ export interface BookingFeedbackDto {
   comment?: string;
 }
 
+export interface AddCheckoutFamilyMemberDto {
+  personName: string;
+  relationship?: string;
+  gender?: string;
+  dateOfBirth?: string;
+  timeOfBirth?: string;
+  placeOfBirth?: string;
+  gotra?: string;
+  rashi?: string;
+}
+
+export interface SubmitPoojaReviewDto {
+  rating: number; // 1 - 5
+  reviewText: string;
+  reviewerName?: string;
+  reviewerCity?: string;
+}
+
 export interface CreatePoojaDto {
   categoryId: number;
   title: string;
   slug: string;
+  tag?: string;
   shortDescription?: string;
   description?: string;
   significance?: string;
@@ -90,12 +115,20 @@ export interface CreatePoojaDto {
   rescheduleCutoffHours?: number;
   status?: PoojaStatus;
   isFeatured?: boolean;
+  isScheduled?: boolean;
+  rating?: number;
+  totalReviews?: number;
+  galleryImages?: Array<{ url: string; title: string }>;
+  includedItems?: Array<{ icon: string; title: string; description: string }>;
+  primaryPriestId?: string;
+  liveStreamingAvailable?: boolean;
 }
 
 export interface UpdatePoojaDto {
   categoryId?: number;
   title?: string;
   slug?: string;
+  tag?: string;
   shortDescription?: string;
   description?: string;
   significance?: string;
@@ -116,6 +149,13 @@ export interface UpdatePoojaDto {
   rescheduleCutoffHours?: number;
   status?: PoojaStatus;
   isFeatured?: boolean;
+  isScheduled?: boolean;
+  rating?: number;
+  totalReviews?: number;
+  galleryImages?: Array<{ url: string; title: string }>;
+  includedItems?: Array<{ icon: string; title: string; description: string }>;
+  primaryPriestId?: string;
+  liveStreamingAvailable?: boolean;
 }
 
 export interface CreatePoojaPackageDto {
@@ -162,9 +202,9 @@ export interface UpdatePoojaAddonDto {
 
 export interface BulkCreateSlotsDto {
   startDate: string; // YYYY-MM-DD
-  endDate: string;   // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
   startTime: string; // HH:mm
-  endTime: string;   // HH:mm
+  endTime: string; // HH:mm
   maxCapacity?: number;
   timezone?: string;
 }
@@ -193,10 +233,17 @@ export interface PoojaFilterQuery {
   page?: number;
   limit?: number;
   categoryId?: number;
+  category?: string; // code or name (e.g., TRENDING, RECOMMENDED, DOSHA_SHANTI)
   search?: string;
   language?: string;
   deliveryMode?: string;
   isFeatured?: boolean;
+  isScheduled?: boolean; // Scheduled vs Personal pooja
+  liveStreamingOnly?: boolean;
+  minRating?: number; // 4.5, 4.8
+  sankalpFee?: string; // 'under_1100' | '1100_to_2500' | 'above_2500'
+  minPrice?: number;
+  maxPrice?: number;
   status?: string;
 }
 

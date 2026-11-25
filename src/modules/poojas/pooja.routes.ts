@@ -1,5 +1,8 @@
 import { Router } from 'express';
 import { poojaController } from './pooja.controller';
+import { authenticate } from '../../common/middleware/auth.middleware';
+import { validate } from '../../common/middleware/validate';
+import { submitPoojaReviewSchema } from './pooja.schemas';
 
 const router = Router();
 
@@ -13,6 +16,14 @@ router.get('/priests/:priestId', poojaController.getPriestDetails);
 
 // Individual Pooja Details & Availability
 router.get('/:poojaIdOrSlug', poojaController.getPoojaDetails);
+router.get('/:poojaIdOrSlug/reviews', poojaController.getPoojaReviews);
+router.post(
+  '/:poojaId/reviews',
+  authenticate,
+  validate({ body: submitPoojaReviewSchema }),
+  poojaController.submitPoojaReview
+);
+
 router.get('/:poojaId/packages', poojaController.getPoojaPackages);
 router.get('/:poojaId/addons', poojaController.getPoojaAddons);
 router.get('/:poojaId/availability', poojaController.getPoojaAvailability);

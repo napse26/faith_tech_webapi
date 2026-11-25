@@ -23,13 +23,27 @@ export class PoojaController {
       const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
       const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string, 10) : undefined;
+      const category = req.query.category ? (req.query.category as string) : undefined;
       const isFeatured = req.query.isFeatured !== undefined ? req.query.isFeatured === 'true' : undefined;
+      const isScheduled = req.query.isScheduled !== undefined ? req.query.isScheduled === 'true' : undefined;
+      const liveStreamingOnly = req.query.liveStreamingOnly !== undefined ? req.query.liveStreamingOnly === 'true' : undefined;
+      const minRating = req.query.minRating ? parseFloat(req.query.minRating as string) : undefined;
+      const sankalpFee = req.query.sankalpFee as string | undefined;
+      const minPrice = req.query.minPrice ? parseFloat(req.query.minPrice as string) : undefined;
+      const maxPrice = req.query.maxPrice ? parseFloat(req.query.maxPrice as string) : undefined;
 
       const result = await poojaService.listPoojas({
         page,
         limit,
         categoryId,
+        category,
         isFeatured,
+        isScheduled,
+        liveStreamingOnly,
+        minRating,
+        sankalpFee,
+        minPrice,
+        maxPrice,
         language: req.query.language as string,
         deliveryMode: req.query.deliveryMode as string,
         search: req.query.search as string
@@ -265,6 +279,56 @@ export class PoojaController {
       const priest = await poojaService.getPriestDetails(req.params.priestId as string);
       res.status(200).json(
         createSuccessResponse(priest, 'Priest details retrieved successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // =========================================================================
+  // 5. DEVOTEE REVIEWS & CHECKOUT CONTEXT
+  // =========================================================================
+
+  async getPoojaReviews(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+      const reviews = await poojaService.getPoojaReviews(req.params.poojaIdOrSlug as string, page, limit);
+      res.status(200).json(
+        createSuccessResponse(reviews, 'Pooja devotee reviews retrieved successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async submitPoojaReview(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const review = await poojaService.submitPoojaReview(req.user!.userId, req.params.poojaId as string, req.body);
+      res.status(201).json(
+        createSuccessResponse(review, review.message, req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getCheckoutContext(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const context = await poojaService.getCheckoutContext(req.user!.userId, req.params.poojaId as string);
+      res.status(200).json(
+        createSuccessResponse(context, 'Checkout context retrieved with family profiles and wallet info', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async addCheckoutFamilyMember(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const member = await poojaService.addCheckoutFamilyMember(req.user!.userId, req.body);
+      res.status(201).json(
+        createSuccessResponse(member, member.message, req.traceId)
       );
     } catch (error) {
       next(error);

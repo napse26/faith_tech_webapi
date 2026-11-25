@@ -4280,6 +4280,64 @@
             "schema": {
               "type": "boolean"
             }
+          },
+          {
+            "name": "is_scheduled",
+            "in": "query",
+            "description": "Filter by Pooja type: true for Scheduled Pooja (fixed date/time slots in DB), false for Personal Pooja (user chooses preferred date and time)",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "category_code",
+            "in": "query",
+            "description": "Filter by top category tabs: TRENDING, RECOMMENDED, DOSHA_SHANTI, NAVAGRAHA, HEALTH_WEALTH",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "TRENDING"
+            }
+          },
+          {
+            "name": "live_streaming_only",
+            "in": "query",
+            "description": "Filter only poojas with live streaming capability",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "min_rating",
+            "in": "query",
+            "description": "Filter poojas with minimum rating (e.g. 4.5, 4.8)",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "example": 4.8
+            }
+          },
+          {
+            "name": "min_price",
+            "in": "query",
+            "description": "Filter by minimum package price (e.g. 1100)",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "example": 1100
+            }
+          },
+          {
+            "name": "max_price",
+            "in": "query",
+            "description": "Filter by maximum package price (e.g. 2500)",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "example": 2500
+            }
           }
         ],
         "responses": {
@@ -4664,6 +4722,55 @@
                         "quantity": {
                           "type": "integer",
                           "default": 1
+                        }
+                      }
+                    }
+                  },
+                  "isScheduled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "true for Scheduled Pooja (requires slotId), false for Personal Pooja (requires preferredDate and preferredTime)"
+                  },
+                  "preferredDate": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-12-05",
+                    "description": "Required if isScheduled is false. Auspicious date selected by the devotee."
+                  },
+                  "preferredTime": {
+                    "type": "string",
+                    "example": "08:30 AM",
+                    "description": "Required if isScheduled is false. Auspicious time selected by the devotee."
+                  },
+                  "devoteeDetails": {
+                    "type": "array",
+                    "description": "Itemized devotee & family details to recite during Sankalp",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "relation"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "example": "Rajesh Sharma"
+                        },
+                        "relation": {
+                          "type": "string",
+                          "example": "SELF"
+                        },
+                        "gotra": {
+                          "type": "string",
+                          "example": "Kashyap"
+                        },
+                        "rashi": {
+                          "type": "string",
+                          "example": "Vrishabha"
+                        },
+                        "nakshatra": {
+                          "type": "string",
+                          "example": "Rohini"
                         }
                       }
                     }
@@ -6051,6 +6158,475 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/poojas/{poojaIdOrSlug}/reviews": {
+      "get": {
+        "tags": [
+          "Online Poojas (Public)"
+        ],
+        "summary": "Get Devotee Reviews & Experience List",
+        "description": "Fetch paginated reviews, verified seva badges, star ratings, and overall rating distribution for a Pooja.",
+        "parameters": [
+          {
+            "name": "poojaIdOrSlug",
+            "in": "path",
+            "required": true,
+            "description": "Pooja UUID or slug",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Devotee reviews and rating summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Pooja reviews retrieved successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "poojaId": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "overallRating": {
+                          "type": "number",
+                          "example": 4.9
+                        },
+                        "totalReviews": {
+                          "type": "integer",
+                          "example": 340
+                        },
+                        "ratingDistribution": {
+                          "type": "object",
+                          "properties": {
+                            "4": {
+                              "type": "number",
+                              "example": 8
+                            },
+                            "5": {
+                              "type": "number",
+                              "example": 92
+                            }
+                          }
+                        },
+                        "reviews": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "reviewId": {
+                                "type": "string"
+                              },
+                              "reviewerName": {
+                                "type": "string"
+                              },
+                              "reviewerCity": {
+                                "type": "string"
+                              },
+                              "rating": {
+                                "type": "number"
+                              },
+                              "reviewText": {
+                                "type": "string"
+                              },
+                              "isVerifiedSeva": {
+                                "type": "boolean"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Online Poojas (Public)"
+        ],
+        "summary": "Submit a Devotee Review",
+        "description": "Authenticated devotee submits feedback and rating for a performed Pooja seva.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "poojaIdOrSlug",
+            "in": "path",
+            "required": true,
+            "description": "Pooja UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "rating",
+                  "reviewText"
+                ],
+                "properties": {
+                  "rating": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "example": 5
+                  },
+                  "reviewText": {
+                    "type": "string",
+                    "example": "Participated in live Sankalp online. Acharya pronounced our gotra impeccably."
+                  },
+                  "reviewerName": {
+                    "type": "string",
+                    "example": "Rameshwar Kulkarni"
+                  },
+                  "reviewerCity": {
+                    "type": "string",
+                    "example": "Varanasi"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Review submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Thank you! Your devotee review has been submitted successfully."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pooja-bookings/checkout-context/{poojaId}": {
+      "get": {
+        "tags": [
+          "Online Pooja Bookings & Payments"
+        ],
+        "summary": "Get Pooja Checkout Context",
+        "description": "Fetch devotee profile details, family members list, wallet balance, active packages, multiselect addons, and slot/preferred date configuration for the checkout page.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "poojaId",
+            "in": "path",
+            "required": true,
+            "description": "Pooja UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "slotId",
+            "in": "query",
+            "required": false,
+            "description": "Slot UUID for scheduled pooja",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Checkout context retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "pooja": {
+                          "type": "object",
+                          "properties": {
+                            "poojaId": {
+                              "type": "string"
+                            },
+                            "title": {
+                              "type": "string"
+                            },
+                            "location": {
+                              "type": "string"
+                            },
+                            "isScheduled": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "devotee": {
+                          "type": "object",
+                          "properties": {
+                            "userId": {
+                              "type": "integer"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "phoneNumber": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "walletBalance": {
+                              "type": "number"
+                            }
+                          }
+                        },
+                        "familyMembers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "profileId": {
+                                "type": "integer"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "relationship": {
+                                "type": "string"
+                              },
+                              "rashi": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "nakshatra": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            }
+                          }
+                        },
+                        "packages": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "addons": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "addonId": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "price": {
+                                "type": "number"
+                              },
+                              "maxQuantity": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pooja-bookings/family-members": {
+      "post": {
+        "tags": [
+          "Online Pooja Bookings & Payments"
+        ],
+        "summary": "Add Family Member from Checkout Modal",
+        "description": "Add a new family member to the devotee profile directly during checkout with name, relation, and optional gotra/rashi/birth details.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fullName",
+                  "relationship"
+                ],
+                "properties": {
+                  "fullName": {
+                    "type": "string",
+                    "example": "Kavita Sharma"
+                  },
+                  "relationship": {
+                    "type": "string",
+                    "enum": [
+                      "SELF",
+                      "SPOUSE",
+                      "CHILD",
+                      "FATHER",
+                      "MOTHER",
+                      "SIBLING",
+                      "OTHER"
+                    ],
+                    "example": "SPOUSE"
+                  },
+                  "gender": {
+                    "type": "string",
+                    "enum": [
+                      "MALE",
+                      "FEMALE",
+                      "OTHER"
+                    ],
+                    "example": "FEMALE"
+                  },
+                  "dateOfBirth": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "1992-04-18"
+                  },
+                  "timeOfBirth": {
+                    "type": "string",
+                    "example": "10:15"
+                  },
+                  "placeOfBirth": {
+                    "type": "string",
+                    "example": "Varanasi, UP"
+                  },
+                  "gotra": {
+                    "type": "string",
+                    "example": "Kashyap"
+                  },
+                  "rashi": {
+                    "type": "string",
+                    "example": "Vrishabha"
+                  },
+                  "nakshatra": {
+                    "type": "string",
+                    "example": "Rohini"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Family member profile added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Family member profile added successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "profileId": {
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "relationship": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }

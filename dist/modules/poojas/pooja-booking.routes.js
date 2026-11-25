@@ -10,12 +10,17 @@ const router = (0, express_1.Router)();
 // Devotee Authentication required for all quotes and bookings
 router.use(auth_middleware_1.authenticate);
 // =========================================================================
-// 1. QUOTE ENGINE
+// 1. CHECKOUT CONTEXT & FAMILY PROFILES
+// =========================================================================
+router.get('/checkout-context/:poojaId', pooja_controller_1.poojaController.getCheckoutContext);
+router.post('/family-members', (0, validate_1.validate)({ body: pooja_schemas_1.addCheckoutFamilyMemberSchema }), pooja_controller_1.poojaController.addCheckoutFamilyMember);
+// =========================================================================
+// 2. QUOTE ENGINE
 // =========================================================================
 router.post('/quotes', (0, validate_1.validate)({ body: pooja_schemas_1.generateQuoteSchema }), pooja_controller_1.poojaController.generateQuote);
 router.get('/quotes/:quoteId', pooja_controller_1.poojaController.getQuote);
 // =========================================================================
-// 2. BOOKING LIFECYCLE
+// 3. BOOKING LIFECYCLE
 // =========================================================================
 router.post('/', (0, validate_1.validate)({ body: pooja_schemas_1.createBookingSchema }), pooja_controller_1.poojaController.createBooking);
 router.get('/', pooja_controller_1.poojaController.listBookings);

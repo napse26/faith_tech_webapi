@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminProcessRefundSchema = exports.adminSetLiveSessionSchema = exports.adminUpdateBookingStatusSchema = exports.adminAssignPriestSchema = exports.bulkCreateSlotsSchema = exports.updatePoojaAddonSchema = exports.createPoojaAddonSchema = exports.updatePoojaPackageSchema = exports.createPoojaPackageSchema = exports.updatePoojaSchema = exports.createPoojaSchema = exports.bookingFeedbackSchema = exports.simulatePaymentSchema = exports.cancelBookingSchema = exports.rescheduleBookingSchema = exports.createBookingSchema = exports.generateQuoteSchema = exports.addonSelectionSchema = exports.sankalpDetailSchema = exports.devoteeDetailSchema = void 0;
+exports.adminProcessRefundSchema = exports.adminSetLiveSessionSchema = exports.adminUpdateBookingStatusSchema = exports.adminAssignPriestSchema = exports.bulkCreateSlotsSchema = exports.updatePoojaAddonSchema = exports.createPoojaAddonSchema = exports.updatePoojaPackageSchema = exports.createPoojaPackageSchema = exports.updatePoojaSchema = exports.createPoojaSchema = exports.bookingFeedbackSchema = exports.simulatePaymentSchema = exports.cancelBookingSchema = exports.rescheduleBookingSchema = exports.createBookingSchema = exports.submitPoojaReviewSchema = exports.addCheckoutFamilyMemberSchema = exports.generateQuoteSchema = exports.addonSelectionSchema = exports.sankalpDetailSchema = exports.devoteeDetailSchema = void 0;
 const zod_1 = require("zod");
 exports.devoteeDetailSchema = zod_1.z.object({
     name: zod_1.z.string().min(2).max(100),
@@ -25,11 +25,30 @@ exports.addonSelectionSchema = zod_1.z.object({
 exports.generateQuoteSchema = zod_1.z.object({
     poojaId: zod_1.z.string().uuid(),
     packageId: zod_1.z.string().uuid(),
-    slotId: zod_1.z.string().uuid(),
-    deliveryMode: zod_1.z.enum(['ONLINE', 'TEMPLE', 'HOME']),
+    slotId: zod_1.z.string().uuid().optional(),
+    isScheduled: zod_1.z.boolean().default(true).optional(),
+    preferredDate: zod_1.z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD').optional(),
+    preferredTime: zod_1.z.string().max(30).optional(),
+    deliveryMode: zod_1.z.enum(['ONLINE', 'TEMPLE', 'HOME']).default('ONLINE'),
     addons: zod_1.z.array(exports.addonSelectionSchema).optional(),
     devotees: zod_1.z.array(exports.devoteeDetailSchema).min(1, 'At least 1 devotee is required'),
     sankalpDetails: exports.sankalpDetailSchema.optional()
+});
+exports.addCheckoutFamilyMemberSchema = zod_1.z.object({
+    personName: zod_1.z.string().min(2).max(100),
+    relationship: zod_1.z.string().max(50).default('FAMILY_MEMBER').optional(),
+    gender: zod_1.z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+    dateOfBirth: zod_1.z.string().optional(),
+    timeOfBirth: zod_1.z.string().optional(),
+    placeOfBirth: zod_1.z.string().max(200).optional(),
+    gotra: zod_1.z.string().max(50).optional(),
+    rashi: zod_1.z.string().max(50).optional()
+});
+exports.submitPoojaReviewSchema = zod_1.z.object({
+    rating: zod_1.z.number().min(1).max(5),
+    reviewText: zod_1.z.string().min(5).max(1000),
+    reviewerName: zod_1.z.string().min(2).max(150).optional(),
+    reviewerCity: zod_1.z.string().max(100).optional()
 });
 exports.createBookingSchema = zod_1.z.object({
     quoteId: zod_1.z.string().uuid(),
@@ -74,7 +93,15 @@ exports.createPoojaSchema = zod_1.z.object({
     cancellationCutoffHours: zod_1.z.number().int().min(0).optional(),
     rescheduleCutoffHours: zod_1.z.number().int().min(0).optional(),
     status: zod_1.z.enum(['DRAFT', 'PUBLISHED', 'INACTIVE', 'ARCHIVED']).default('DRAFT').optional(),
-    isFeatured: zod_1.z.boolean().default(false).optional()
+    isFeatured: zod_1.z.boolean().default(false).optional(),
+    isScheduled: zod_1.z.boolean().default(true).optional(),
+    tag: zod_1.z.string().max(100).optional(),
+    rating: zod_1.z.number().min(1).max(5).optional(),
+    totalReviews: zod_1.z.number().int().min(0).optional(),
+    galleryImages: zod_1.z.array(zod_1.z.object({ url: zod_1.z.string(), title: zod_1.z.string() })).optional(),
+    includedItems: zod_1.z.array(zod_1.z.object({ icon: zod_1.z.string(), title: zod_1.z.string(), description: zod_1.z.string() })).optional(),
+    primaryPriestId: zod_1.z.string().uuid().optional(),
+    liveStreamingAvailable: zod_1.z.boolean().default(true).optional()
 });
 exports.updatePoojaSchema = exports.createPoojaSchema.partial();
 exports.createPoojaPackageSchema = zod_1.z.object({

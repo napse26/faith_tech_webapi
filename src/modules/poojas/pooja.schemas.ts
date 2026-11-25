@@ -26,11 +26,32 @@ export const addonSelectionSchema = z.object({
 export const generateQuoteSchema = z.object({
   poojaId: z.string().uuid(),
   packageId: z.string().uuid(),
-  slotId: z.string().uuid(),
-  deliveryMode: z.enum(['ONLINE', 'TEMPLE', 'HOME']),
+  slotId: z.string().uuid().optional(),
+  isScheduled: z.boolean().default(true).optional(),
+  preferredDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD').optional(),
+  preferredTime: z.string().max(30).optional(),
+  deliveryMode: z.enum(['ONLINE', 'TEMPLE', 'HOME']).default('ONLINE'),
   addons: z.array(addonSelectionSchema).optional(),
   devotees: z.array(devoteeDetailSchema).min(1, 'At least 1 devotee is required'),
   sankalpDetails: sankalpDetailSchema.optional()
+});
+
+export const addCheckoutFamilyMemberSchema = z.object({
+  personName: z.string().min(2).max(100),
+  relationship: z.string().max(50).default('FAMILY_MEMBER').optional(),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  dateOfBirth: z.string().optional(),
+  timeOfBirth: z.string().optional(),
+  placeOfBirth: z.string().max(200).optional(),
+  gotra: z.string().max(50).optional(),
+  rashi: z.string().max(50).optional()
+});
+
+export const submitPoojaReviewSchema = z.object({
+  rating: z.number().min(1).max(5),
+  reviewText: z.string().min(5).max(1000),
+  reviewerName: z.string().min(2).max(150).optional(),
+  reviewerCity: z.string().max(100).optional()
 });
 
 export const createBookingSchema = z.object({
@@ -81,7 +102,15 @@ export const createPoojaSchema = z.object({
   cancellationCutoffHours: z.number().int().min(0).optional(),
   rescheduleCutoffHours: z.number().int().min(0).optional(),
   status: z.enum(['DRAFT', 'PUBLISHED', 'INACTIVE', 'ARCHIVED']).default('DRAFT').optional(),
-  isFeatured: z.boolean().default(false).optional()
+  isFeatured: z.boolean().default(false).optional(),
+  isScheduled: z.boolean().default(true).optional(),
+  tag: z.string().max(100).optional(),
+  rating: z.number().min(1).max(5).optional(),
+  totalReviews: z.number().int().min(0).optional(),
+  galleryImages: z.array(z.object({ url: z.string(), title: z.string() })).optional(),
+  includedItems: z.array(z.object({ icon: z.string(), title: z.string(), description: z.string() })).optional(),
+  primaryPriestId: z.string().uuid().optional(),
+  liveStreamingAvailable: z.boolean().default(true).optional()
 });
 
 export const updatePoojaSchema = createPoojaSchema.partial();

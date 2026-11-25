@@ -8,7 +8,8 @@ import {
   rescheduleBookingSchema,
   cancelBookingSchema,
   simulatePaymentSchema,
-  bookingFeedbackSchema
+  bookingFeedbackSchema,
+  addCheckoutFamilyMemberSchema
 } from './pooja.schemas';
 
 const router = Router();
@@ -17,13 +18,23 @@ const router = Router();
 router.use(authenticate);
 
 // =========================================================================
-// 1. QUOTE ENGINE
+// 1. CHECKOUT CONTEXT & FAMILY PROFILES
+// =========================================================================
+router.get('/checkout-context/:poojaId', poojaController.getCheckoutContext);
+router.post(
+  '/family-members',
+  validate({ body: addCheckoutFamilyMemberSchema }),
+  poojaController.addCheckoutFamilyMember
+);
+
+// =========================================================================
+// 2. QUOTE ENGINE
 // =========================================================================
 router.post('/quotes', validate({ body: generateQuoteSchema }), poojaController.generateQuote);
 router.get('/quotes/:quoteId', poojaController.getQuote);
 
 // =========================================================================
-// 2. BOOKING LIFECYCLE
+// 3. BOOKING LIFECYCLE
 // =========================================================================
 router.post('/', validate({ body: createBookingSchema }), poojaController.createBooking);
 router.get('/', poojaController.listBookings);

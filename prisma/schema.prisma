@@ -501,7 +501,11 @@ model pooja_bookings {
   user_id             BigInt
   pooja_id            String                @db.Uuid
   package_id          String                @db.Uuid
-  slot_id             String                @db.Uuid
+  slot_id             String?               @db.Uuid
+  is_scheduled        Boolean?              @default(true)
+  scheduled_date      DateTime?             @db.Date
+  scheduled_time      String?               @db.VarChar(15)
+  pooja_link          String?               @db.VarChar(500)
   delivery_mode       String                @db.VarChar(30)
   status              String                @default("PENDING_PAYMENT") @db.VarChar(30)
   price_snapshot      Json
@@ -524,7 +528,7 @@ model pooja_bookings {
   pooja_packages      pooja_packages        @relation(fields: [package_id], references: [package_id], onUpdate: NoAction)
   poojas              poojas                @relation(fields: [pooja_id], references: [pooja_id], onUpdate: NoAction)
   priests             priests?              @relation(fields: [priest_id], references: [priest_id], onUpdate: NoAction)
-  pooja_slots         pooja_slots           @relation(fields: [slot_id], references: [slot_id], onUpdate: NoAction)
+  pooja_slots         pooja_slots?          @relation(fields: [slot_id], references: [slot_id], onUpdate: NoAction)
   users               users                 @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([status], map: "idx_pooja_bookings_status")
@@ -570,7 +574,10 @@ model pooja_quotes {
   user_id              BigInt
   pooja_id             String         @db.Uuid
   package_id           String         @db.Uuid
-  slot_id              String         @db.Uuid
+  slot_id              String?        @db.Uuid
+  is_scheduled         Boolean?       @default(true)
+  preferred_date       DateTime?      @db.Date
+  preferred_time       String?        @db.VarChar(15)
   delivery_mode        String         @db.VarChar(30)
   addons_json          Json?          @default("[]")
   devotees_json        Json?          @default("[]")
@@ -586,7 +593,7 @@ model pooja_quotes {
   created_at           DateTime?      @default(now()) @db.Timestamptz(6)
   pooja_packages       pooja_packages @relation(fields: [package_id], references: [package_id], onDelete: Cascade, onUpdate: NoAction)
   poojas               poojas         @relation(fields: [pooja_id], references: [pooja_id], onDelete: Cascade, onUpdate: NoAction)
-  pooja_slots          pooja_slots    @relation(fields: [slot_id], references: [slot_id], onDelete: Cascade, onUpdate: NoAction)
+  pooja_slots          pooja_slots?   @relation(fields: [slot_id], references: [slot_id], onDelete: Cascade, onUpdate: NoAction)
   users                users          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([user_id, expires_at], map: "idx_pooja_quotes_user")
@@ -637,6 +644,14 @@ model poojas {
   reschedule_cutoff_hours   Int?             @default(12)
   status                    String?          @default("DRAFT") @db.VarChar(20)
   is_featured               Boolean?         @default(false)
+  is_scheduled              Boolean?         @default(true)
+  tag                       String?          @db.VarChar(100)
+  rating                    Decimal?         @default(4.90) @db.Decimal(3, 2)
+  total_reviews             Int?             @default(0)
+  gallery_images            Json?            @default("[]")
+  included_items            Json?            @default("[]")
+  primary_priest_id         String?          @db.Uuid
+  live_streaming_available  Boolean?         @default(true)
   created_at                DateTime?        @default(now()) @db.Timestamptz(6)
   updated_at                DateTime?        @default(now()) @db.Timestamptz(6)
   pooja_addons              pooja_addons[]
@@ -644,10 +659,28 @@ model poojas {
   pooja_packages            pooja_packages[]
   pooja_quotes              pooja_quotes[]
   pooja_slots               pooja_slots[]
+  pooja_reviews             pooja_reviews[]
   pooja_categories          pooja_categories @relation(fields: [category_id], references: [category_id], onUpdate: NoAction)
+  priests                   priests?         @relation("poojas_primary_priest", fields: [primary_priest_id], references: [priest_id], onUpdate: NoAction)
 
   @@index([category_id], map: "idx_poojas_category")
   @@index([status], map: "idx_poojas_status")
+}
+
+model pooja_reviews {
+  review_id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pooja_id         String    @db.Uuid
+  user_id          BigInt?
+  reviewer_name    String    @db.VarChar(150)
+  reviewer_city    String?   @db.VarChar(100)
+  rating           Decimal   @default(5.0) @db.Decimal(2, 1)
+  review_text      String?
+  is_verified_seva Boolean?  @default(true)
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  poojas           poojas    @relation(fields: [pooja_id], references: [pooja_id], onDelete: Cascade, onUpdate: NoAction)
+  users            users?    @relation(fields: [user_id], references: [user_id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([pooja_id, created_at(sort: Desc)], map: "idx_pooja_reviews_pooja")
 }
 
 model priests {
@@ -663,6 +696,7 @@ model priests {
   is_active          Boolean?         @default(true)
   created_at         DateTime?        @default(now()) @db.Timestamptz(6)
   pooja_bookings     pooja_bookings[]
+  poojas             poojas[]         @relation("poojas_primary_priest")
   users              users?           @relation(fields: [user_id], references: [user_id], onUpdate: NoAction)
 }
 
@@ -979,6 +1013,7 @@ model users {
   pooja_booking_audit                                  pooja_booking_audit[]
   pooja_bookings                                       pooja_bookings[]
   pooja_quotes                                         pooja_quotes[]
+  pooja_reviews                                        pooja_reviews[]
   priests                                              priests[]
   referrals_referrals_referred_user_idTousers          referrals?                          @relation("referrals_referred_user_idTousers")
   referrals_referrals_referrer_user_idTousers          referrals[]                         @relation("referrals_referrer_user_idTousers")

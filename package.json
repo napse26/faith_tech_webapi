@@ -4,7 +4,7 @@
   "description": "Enterprise-grade REST API backend for Astrology Mobile Application",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc && node -e \"const fs=require('fs'); if (!fs.existsSync('dist/src')) fs.mkdirSync('dist/src', {recursive:true}); fs.writeFileSync('dist/src/server.js', 'require(\\\"../server.js\\\");\\n');\"",
+    "build": "tsc && node -e \"const fs=require('fs'); if (!fs.existsSync('dist/src')) fs.mkdirSync('dist/src', {recursive:true}); fs.writeFileSync('dist/src/server.js', 'require(\\\"../server.js\\\");\\n'); if (!fs.existsSync('dist/docs')) fs.mkdirSync('dist/docs', {recursive:true}); fs.copyFileSync('src/docs/openapi.json', 'dist/docs/openapi.json'); if (!fs.existsSync('dist/src/docs')) fs.mkdirSync('dist/src/docs', {recursive:true}); fs.copyFileSync('src/docs/openapi.json', 'dist/src/docs/openapi.json');\"",
     "start": "node dist/server.js",
     "start:src": "node dist/src/server.js",
     "dev": "tsx watch src/server.ts",
