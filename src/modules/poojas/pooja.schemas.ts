@@ -78,6 +78,14 @@ export const bookingFeedbackSchema = z.object({
   comment: z.string().max(500).optional()
 });
 
+export const poojaProcessStepSchema = z.object({
+  stepNumber: z.number().int().positive(),
+  title: z.string().min(2).max(150),
+  description: z.string().min(5),
+  significance: z.string().optional(),
+  duration: z.string().optional()
+});
+
 // Admin Schemas
 export const createPoojaSchema = z.object({
   categoryId: z.number().int().positive(),
@@ -88,6 +96,8 @@ export const createPoojaSchema = z.object({
   significance: z.string().optional(),
   benefits: z.array(z.string()).optional(),
   ritualSteps: z.array(z.string()).optional(),
+  poojaProcess: z.array(poojaProcessStepSchema).optional(),
+  totalParticipants: z.number().int().min(0).optional(),
   samagriInfo: z.string().optional(),
   instructions: z.string().optional(),
   supportedLanguages: z.array(z.string()).optional(),
@@ -116,6 +126,7 @@ export const createPoojaSchema = z.object({
 export const updatePoojaSchema = createPoojaSchema.partial();
 
 export const createPoojaPackageSchema = z.object({
+  packageCode: z.enum(['INDIVIDUAL', 'PARTNER', 'FAMILY', 'JOINT_FAMILY_BHOG']).or(z.string()).optional(),
   title: z.string().min(2).max(150),
   description: z.string().optional(),
   price: z.number().positive(),

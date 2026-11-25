@@ -292,6 +292,112 @@ export class PoojaService {
       temple_affiliation: 'Kashi Vishwanath Temple, Varanasi'
     };
 
+    // Calculate total participants (if scheduled pooja)
+    let totalParticipants: number | null = null;
+    let participantsLabel: string = 'Exclusive 1-on-1 Personal Seva';
+    if (pooja.is_scheduled) {
+      const confirmedBookings = await prisma.pooja_bookings.count({
+        where: {
+          pooja_id: pooja.pooja_id,
+          status: { in: ['CONFIRMED', 'COMPLETED', 'PAID'] }
+        }
+      });
+      const baseParticipants = (pooja as any).total_participants ?? 1250;
+      const computedTotal = Number(baseParticipants) + confirmedBookings;
+      totalParticipants = computedTotal;
+      participantsLabel = `${computedTotal.toLocaleString('en-IN')}+ Devotees Enrolled`;
+    }
+
+    // Detailed step-by-step Pooja Process
+    const defaultProcess = [
+      {
+        stepNumber: 1,
+        title: 'Sankalp & Deep Prajwalan',
+        description: 'The head Acharya lights the sacred Akhand Jyot, recites Vedic Ganpati invocations, and formally pronounces your Gotra, Nakshatra, and family names into the Sankalp patra.',
+        significance: 'Establishes the divine link between the devotee and the presiding deity, removing all karmic obstacles.',
+        duration: '10-15 mins'
+      },
+      {
+        stepNumber: 2,
+        title: 'Shodashopachara & Panchamrit Abhishekam',
+        description: 'Consecration of the deity/Shivalinga with holy Gangajal, cow milk, fresh curd, pure desi cow ghee, honey, and sugarcane juice accompanied by sacred Vedic stotram chanting.',
+        significance: 'Purifies subtle energy channels, cleanses sins, and brings peace, healing, and divine grace.',
+        duration: '25-30 mins'
+      },
+      {
+        stepNumber: 3,
+        title: 'Vedic Mantra Recitation & Archana',
+        description: 'Chanting of sacred Vedic mantras (Sri Rudram / Sri Suktam / Atharvashirsha) with offerings of 108 fresh Bilva leaves, Chandan, and sacred flowers.',
+        significance: 'Pacifies planetary doshas (Rahu-Ketu, Shani, Manglik) and bestows health, long life, and spiritual aura.',
+        duration: '20 mins'
+      },
+      {
+        stepNumber: 4,
+        title: 'Sacred Hawan & Personalized Ahuti',
+        description: 'Sacred fire ritual (Havan) performed in the consecrated Homa Kund with rare herbs and pure samagri. Personalized ahutis are offered invoking divine blessings for your family.',
+        significance: 'Dispels negative energies, protects from evil eye, and attracts prosperity, wealth, and career breakthroughs.',
+        duration: '25-30 mins'
+      },
+      {
+        stepNumber: 5,
+        title: 'Maha Aarti & Shankhanaad',
+        description: 'Grand Vedic Aarti performed with multi-tiered camphor flames and Pancha Deepa, accompanied by sacred bells and conch blowing.',
+        significance: 'Fills the atmosphere with divine vibrational frequencies and seals spiritual merits into the devotee’s aura.',
+        duration: '10 mins'
+      },
+      {
+        stepNumber: 6,
+        title: 'Prasad Consecration & Speed Post Dispatch',
+        description: 'Blessed prasad (Gangajal, dry fruits, sacred thread, energized copper yantra) is sanctified in the Garbhagriha, packed safely, and dispatched to your home address.',
+        significance: 'Brings authentic temple blessings physically into your home shrine to sanctify your living space.',
+        duration: 'Concluding'
+      }
+    ];
+
+    const poojaProcess = (Array.isArray((pooja as any).pooja_process) && ((pooja as any).pooja_process as any[]).length > 0)
+      ? (pooja as any).pooja_process
+      : (Array.isArray(pooja.ritual_steps) && pooja.ritual_steps.length > 0)
+        ? pooja.ritual_steps.map((step, idx) => ({
+            stepNumber: idx + 1,
+            title: step.split(':')[0] || `Ritual Step ${idx + 1}`,
+            description: step.split(':')[1]?.trim() || step,
+            significance: 'Vedic scriptural ritual performed for devotee welfare',
+            duration: '15-20 mins'
+          }))
+        : defaultProcess;
+
+    // Format packages: INDIVIDUAL, PARTNER, FAMILY, JOINT_FAMILY_BHOG
+    const formattedPackages = pooja.pooja_packages.map(pkg => {
+      const rawCode = (pkg as any).package_code?.toUpperCase();
+      const packageCode = rawCode || (
+        pkg.max_devotees === 1 ? 'INDIVIDUAL' :
+        pkg.max_devotees === 2 ? 'PARTNER' :
+        (pkg.max_devotees ?? 4) <= 4 ? 'FAMILY' : 'JOINT_FAMILY_BHOG'
+      );
+      const includesBhog = packageCode === 'JOINT_FAMILY_BHOG' || pkg.title.toLowerCase().includes('bhog');
+      return {
+        packageId: pkg.package_id,
+        packageCode,
+        title: pkg.title,
+        description: pkg.description,
+        price: Number(pkg.price),
+        discountPrice: Number(pkg.discount_price ?? pkg.price),
+        durationMinutes: pkg.duration_minutes,
+        maxDevotees: pkg.max_devotees,
+        includesBhog,
+        samagriIncluded: pkg.samagri_included,
+        priestLevel: pkg.priest_level,
+        deliveryMode: pkg.delivery_mode
+      };
+    });
+
+    const packagesByTier = {
+      individual: formattedPackages.find(p => p.packageCode === 'INDIVIDUAL') || null,
+      partner: formattedPackages.find(p => p.packageCode === 'PARTNER') || null,
+      family: formattedPackages.find(p => p.packageCode === 'FAMILY') || null,
+      joint_family_bhog: formattedPackages.find(p => p.packageCode === 'JOINT_FAMILY_BHOG') || null
+    };
+
     return {
       poojaId: pooja.pooja_id,
       title: pooja.title,
@@ -312,6 +418,8 @@ export class PoojaService {
       templeName: pooja.temple_name,
       timing,
       isScheduled: pooja.is_scheduled ?? true,
+      totalParticipants,
+      participantsLabel,
       isFeatured: pooja.is_featured ?? false,
       liveStreamingAvailable: pooja.live_streaming_available ?? true,
       priest: {
@@ -341,21 +449,13 @@ export class PoojaService {
         : defaultGallery,
       description: pooja.description,
       significance: pooja.significance,
+      poojaProcess,
+      process: poojaProcess, // direct alias
       ritualSteps: pooja.ritual_steps,
       pooja_packages: pooja.pooja_packages,
       pooja_addons: pooja.pooja_addons,
-      packages: pooja.pooja_packages.map(pkg => ({
-        packageId: pkg.package_id,
-        title: pkg.title,
-        description: pkg.description,
-        price: Number(pkg.price),
-        discountPrice: Number(pkg.discount_price ?? pkg.price),
-        durationMinutes: pkg.duration_minutes,
-        maxDevotees: pkg.max_devotees,
-        samagriIncluded: pkg.samagri_included,
-        priestLevel: pkg.priest_level,
-        deliveryMode: pkg.delivery_mode
-      })),
+      packages: formattedPackages,
+      packagesByTier,
       addons: pooja.pooja_addons.map(a => ({
         addonId: a.addon_id,
         title: a.title,
@@ -599,10 +699,73 @@ export class PoojaService {
     };
   }
 
-  async getPoojaPackages(poojaId: string) {
-    return prisma.pooja_packages.findMany({
+  async getPoojaProcess(idOrSlug: string) {
+    const details = await this.getPoojaDetails(idOrSlug);
+    return {
+      poojaId: details.poojaId,
+      title: details.title,
+      poojaProcess: details.poojaProcess
+    };
+  }
+
+  async getPoojaParticipants(idOrSlug: string) {
+    const details = await this.getPoojaDetails(idOrSlug);
+    return {
+      poojaId: details.poojaId,
+      title: details.title,
+      isScheduled: details.isScheduled,
+      totalParticipants: details.totalParticipants,
+      participantsLabel: details.participantsLabel
+    };
+  }
+
+  async getPoojaPackages(idOrPoojaId: string) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrPoojaId);
+    let poojaId = idOrPoojaId;
+    if (!isUuid) {
+      const p = await prisma.poojas.findUnique({ where: { slug: idOrPoojaId }, select: { pooja_id: true } });
+      if (p) poojaId = p.pooja_id;
+    }
+
+    const packages = await prisma.pooja_packages.findMany({
       where: { pooja_id: poojaId, is_active: true },
       orderBy: { price: 'asc' }
+    });
+
+    return packages.map(pkg => {
+      const rawCode = (pkg as any).package_code?.toUpperCase();
+      const packageCode = rawCode || (
+        pkg.max_devotees === 1 ? 'INDIVIDUAL' :
+        pkg.max_devotees === 2 ? 'PARTNER' :
+        (pkg.max_devotees ?? 4) <= 4 ? 'FAMILY' : 'JOINT_FAMILY_BHOG'
+      );
+      const includesBhog = packageCode === 'JOINT_FAMILY_BHOG' || pkg.title.toLowerCase().includes('bhog');
+      return {
+        packageId: pkg.package_id,
+        package_id: pkg.package_id,
+        poojaId: pkg.pooja_id,
+        pooja_id: pkg.pooja_id,
+        packageCode,
+        package_code: packageCode,
+        title: pkg.title,
+        description: pkg.description,
+        price: Number(pkg.price),
+        discountPrice: Number(pkg.discount_price ?? pkg.price),
+        discount_price: Number(pkg.discount_price ?? pkg.price),
+        durationMinutes: pkg.duration_minutes,
+        duration_minutes: pkg.duration_minutes,
+        maxDevotees: pkg.max_devotees,
+        max_devotees: pkg.max_devotees,
+        includesBhog,
+        samagriIncluded: pkg.samagri_included,
+        samagri_included: pkg.samagri_included,
+        priestLevel: pkg.priest_level,
+        priest_level: pkg.priest_level,
+        deliveryMode: pkg.delivery_mode,
+        delivery_mode: pkg.delivery_mode,
+        isActive: pkg.is_active,
+        is_active: pkg.is_active
+      };
     });
   }
 
@@ -1827,7 +1990,9 @@ export class PoojaService {
         cancellation_cutoff_hours: dto.cancellationCutoffHours ?? 24,
         reschedule_cutoff_hours: dto.rescheduleCutoffHours ?? 12,
         status: dto.status ?? 'DRAFT',
-        is_featured: dto.isFeatured ?? false
+        is_featured: dto.isFeatured ?? false,
+        pooja_process: (dto.poojaProcess as any) ?? undefined,
+        total_participants: dto.totalParticipants ?? 1250
       }
     });
 
@@ -1869,6 +2034,8 @@ export class PoojaService {
         reschedule_cutoff_hours: dto.rescheduleCutoffHours ?? existing.reschedule_cutoff_hours,
         status: dto.status ?? existing.status,
         is_featured: dto.isFeatured ?? existing.is_featured,
+        pooja_process: (dto.poojaProcess as any) ?? (existing as any).pooja_process,
+        total_participants: dto.totalParticipants ?? (existing as any).total_participants,
         updated_at: new Date()
       }
     });
@@ -1897,6 +2064,7 @@ export class PoojaService {
     return prisma.pooja_packages.create({
       data: {
         pooja_id: poojaId,
+        package_code: (dto as any).packageCode ?? 'INDIVIDUAL',
         title: dto.title,
         description: dto.description,
         price: dto.price,
@@ -1923,6 +2091,7 @@ export class PoojaService {
     return prisma.pooja_packages.update({
       where: { package_id: packageId },
       data: {
+        package_code: (dto as any).packageCode ?? (pkg as any).package_code,
         title: dto.title ?? pkg.title,
         description: dto.description ?? pkg.description,
         price: dto.price !== undefined ? dto.price : pkg.price,

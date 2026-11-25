@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminProcessRefundSchema = exports.adminSetLiveSessionSchema = exports.adminUpdateBookingStatusSchema = exports.adminAssignPriestSchema = exports.bulkCreateSlotsSchema = exports.updatePoojaAddonSchema = exports.createPoojaAddonSchema = exports.updatePoojaPackageSchema = exports.createPoojaPackageSchema = exports.updatePoojaSchema = exports.createPoojaSchema = exports.bookingFeedbackSchema = exports.simulatePaymentSchema = exports.cancelBookingSchema = exports.rescheduleBookingSchema = exports.createBookingSchema = exports.submitPoojaReviewSchema = exports.addCheckoutFamilyMemberSchema = exports.generateQuoteSchema = exports.addonSelectionSchema = exports.sankalpDetailSchema = exports.devoteeDetailSchema = void 0;
+exports.adminProcessRefundSchema = exports.adminSetLiveSessionSchema = exports.adminUpdateBookingStatusSchema = exports.adminAssignPriestSchema = exports.bulkCreateSlotsSchema = exports.updatePoojaAddonSchema = exports.createPoojaAddonSchema = exports.updatePoojaPackageSchema = exports.createPoojaPackageSchema = exports.updatePoojaSchema = exports.createPoojaSchema = exports.poojaProcessStepSchema = exports.bookingFeedbackSchema = exports.simulatePaymentSchema = exports.cancelBookingSchema = exports.rescheduleBookingSchema = exports.createBookingSchema = exports.submitPoojaReviewSchema = exports.addCheckoutFamilyMemberSchema = exports.generateQuoteSchema = exports.addonSelectionSchema = exports.sankalpDetailSchema = exports.devoteeDetailSchema = void 0;
 const zod_1 = require("zod");
 exports.devoteeDetailSchema = zod_1.z.object({
     name: zod_1.z.string().min(2).max(100),
@@ -69,6 +69,13 @@ exports.bookingFeedbackSchema = zod_1.z.object({
     rating: zod_1.z.number().int().min(1).max(5),
     comment: zod_1.z.string().max(500).optional()
 });
+exports.poojaProcessStepSchema = zod_1.z.object({
+    stepNumber: zod_1.z.number().int().positive(),
+    title: zod_1.z.string().min(2).max(150),
+    description: zod_1.z.string().min(5),
+    significance: zod_1.z.string().optional(),
+    duration: zod_1.z.string().optional()
+});
 // Admin Schemas
 exports.createPoojaSchema = zod_1.z.object({
     categoryId: zod_1.z.number().int().positive(),
@@ -79,6 +86,8 @@ exports.createPoojaSchema = zod_1.z.object({
     significance: zod_1.z.string().optional(),
     benefits: zod_1.z.array(zod_1.z.string()).optional(),
     ritualSteps: zod_1.z.array(zod_1.z.string()).optional(),
+    poojaProcess: zod_1.z.array(exports.poojaProcessStepSchema).optional(),
+    totalParticipants: zod_1.z.number().int().min(0).optional(),
     samagriInfo: zod_1.z.string().optional(),
     instructions: zod_1.z.string().optional(),
     supportedLanguages: zod_1.z.array(zod_1.z.string()).optional(),
@@ -105,6 +114,7 @@ exports.createPoojaSchema = zod_1.z.object({
 });
 exports.updatePoojaSchema = exports.createPoojaSchema.partial();
 exports.createPoojaPackageSchema = zod_1.z.object({
+    packageCode: zod_1.z.enum(['INDIVIDUAL', 'PARTNER', 'FAMILY', 'JOINT_FAMILY_BHOG']).or(zod_1.z.string()).optional(),
     title: zod_1.z.string().min(2).max(150),
     description: zod_1.z.string().optional(),
     price: zod_1.z.number().positive(),

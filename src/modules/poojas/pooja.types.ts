@@ -90,6 +90,16 @@ export interface SubmitPoojaReviewDto {
   reviewerCity?: string;
 }
 
+export interface PoojaProcessStep {
+  stepNumber: number;
+  title: string;
+  description: string;
+  significance?: string;
+  duration?: string;
+}
+
+export type PoojaPackageTier = 'INDIVIDUAL' | 'PARTNER' | 'FAMILY' | 'JOINT_FAMILY_BHOG' | string;
+
 export interface CreatePoojaDto {
   categoryId: number;
   title: string;
@@ -100,6 +110,8 @@ export interface CreatePoojaDto {
   significance?: string;
   benefits?: string[];
   ritualSteps?: string[];
+  poojaProcess?: PoojaProcessStep[];
+  totalParticipants?: number;
   samagriInfo?: string;
   instructions?: string;
   supportedLanguages?: string[];
@@ -134,6 +146,8 @@ export interface UpdatePoojaDto {
   significance?: string;
   benefits?: string[];
   ritualSteps?: string[];
+  poojaProcess?: PoojaProcessStep[];
+  totalParticipants?: number;
   samagriInfo?: string;
   instructions?: string;
   supportedLanguages?: string[];
@@ -159,6 +173,7 @@ export interface UpdatePoojaDto {
 }
 
 export interface CreatePoojaPackageDto {
+  packageCode?: PoojaPackageTier;
   title: string;
   description?: string;
   price: number;
@@ -172,6 +187,7 @@ export interface CreatePoojaPackageDto {
 }
 
 export interface UpdatePoojaPackageDto {
+  packageCode?: PoojaPackageTier;
   title?: string;
   description?: string;
   price?: number;

@@ -16,6 +16,9 @@ router.get('/priests/:priestId', poojaController.getPriestDetails);
 
 // Individual Pooja Details & Availability
 router.get('/:poojaIdOrSlug', poojaController.getPoojaDetails);
+router.get('/:poojaIdOrSlug/process', poojaController.getPoojaProcess);
+router.get('/:poojaIdOrSlug/participants', poojaController.getPoojaParticipants);
+router.get('/:poojaIdOrSlug/packages', poojaController.getPoojaPackages);
 router.get('/:poojaIdOrSlug/reviews', poojaController.getPoojaReviews);
 router.post(
   '/:poojaId/reviews',

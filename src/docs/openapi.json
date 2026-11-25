@@ -6633,6 +6633,137 @@
           }
         }
       }
+    },
+    "/api/v1/poojas/{poojaIdOrSlug}/process": {
+      "get": {
+        "tags": [
+          "Online Poojas (Public)"
+        ],
+        "summary": "Get Detailed Pooja Process",
+        "description": "Returns the structured multi-step Vedic ritual process of the pooja with step numbers, descriptions, durations, and spiritual significance.",
+        "parameters": [
+          {
+            "name": "poojaIdOrSlug",
+            "in": "path",
+            "required": true,
+            "description": "Pooja UUID or slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pooja process retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "poojaId": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "poojaProcess": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "stepNumber": {
+                                "type": "integer"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "significance": {
+                                "type": "string"
+                              },
+                              "duration": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/poojas/{poojaIdOrSlug}/participants": {
+      "get": {
+        "tags": [
+          "Online Poojas (Public)"
+        ],
+        "summary": "Get Scheduled Pooja Participant Count",
+        "description": "Returns the total number of enrolled participants and display label for a scheduled pooja.",
+        "parameters": [
+          {
+            "name": "poojaIdOrSlug",
+            "in": "path",
+            "required": true,
+            "description": "Pooja UUID or slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Participant count retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "poojaId": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "isScheduled": {
+                          "type": "boolean"
+                        },
+                        "totalParticipants": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "participantsLabel": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "tags": [

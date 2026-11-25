@@ -60,9 +60,28 @@ class PoojaController {
             next(error);
         }
     }
+    async getPoojaProcess(req, res, next) {
+        try {
+            const processInfo = await pooja_service_1.poojaService.getPoojaProcess(req.params.poojaIdOrSlug);
+            res.status(200).json((0, api_response_1.createSuccessResponse)(processInfo, 'Pooja process details retrieved successfully', req.traceId));
+        }
+        catch (error) {
+            next(error);
+        }
+    }
+    async getPoojaParticipants(req, res, next) {
+        try {
+            const participants = await pooja_service_1.poojaService.getPoojaParticipants(req.params.poojaIdOrSlug);
+            res.status(200).json((0, api_response_1.createSuccessResponse)(participants, 'Pooja participants count retrieved successfully', req.traceId));
+        }
+        catch (error) {
+            next(error);
+        }
+    }
     async getPoojaPackages(req, res, next) {
         try {
-            const packages = await pooja_service_1.poojaService.getPoojaPackages(req.params.poojaId);
+            const param = (req.params.poojaId || req.params.poojaIdOrSlug);
+            const packages = await pooja_service_1.poojaService.getPoojaPackages(param);
             res.status(200).json((0, api_response_1.createSuccessResponse)(packages, 'Pooja packages retrieved successfully', req.traceId));
         }
         catch (error) {

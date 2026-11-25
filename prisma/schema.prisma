@@ -550,6 +550,7 @@ model pooja_categories {
 model pooja_packages {
   package_id       String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   pooja_id         String           @db.Uuid
+  package_code     String?          @default("INDIVIDUAL") @db.VarChar(50)
   title            String           @db.VarChar(150)
   description      String?
   price            Decimal          @db.Decimal(10, 2)
@@ -650,6 +651,8 @@ model poojas {
   total_reviews             Int?             @default(0)
   gallery_images            Json?            @default("[]")
   included_items            Json?            @default("[]")
+  pooja_process             Json?            @default("[]")
+  total_participants        Int?             @default(1250)
   primary_priest_id         String?          @db.Uuid
   live_streaming_available  Boolean?         @default(true)
   created_at                DateTime?        @default(now()) @db.Timestamptz(6)
