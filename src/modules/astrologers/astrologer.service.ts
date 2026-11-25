@@ -569,10 +569,21 @@ export class AstrologerService {
 
   async getQualifications(userId: bigint) {
     const astro = await this.getAstrologerByUserId(userId);
-    return prisma.astrologer_qualifications.findMany({
+    const quals = await prisma.astrologer_qualifications.findMany({
       where: { astrologer_id: astro.astrologer_id },
       orderBy: { created_at: 'desc' }
     });
+    return quals.map(q => ({
+      qualificationId: q.qualification_id,
+      astrologerId: q.astrologer_id,
+      qualificationName: q.qualification_name,
+      institution: q.institution,
+      yearOfCompletion: q.year_of_completion,
+      description: q.description,
+      certificateUrl: q.certificate_url,
+      verificationStatus: q.verification_status,
+      createdAt: q.created_at
+    }));
   }
 
   async addQualification(userId: bigint, dto: AddQualificationDto) {
@@ -590,7 +601,17 @@ export class AstrologerService {
       }
     });
 
-    return qual;
+    return {
+      qualificationId: qual.qualification_id,
+      astrologerId: qual.astrologer_id,
+      qualificationName: qual.qualification_name,
+      institution: qual.institution,
+      yearOfCompletion: qual.year_of_completion,
+      description: qual.description,
+      certificateUrl: qual.certificate_url,
+      verificationStatus: qual.verification_status,
+      createdAt: qual.created_at
+    };
   }
 
   async updateQualification(userId: bigint, qualId: string, dto: UpdateQualificationDto) {
@@ -647,10 +668,22 @@ export class AstrologerService {
 
   async getDocuments(userId: bigint) {
     const astro = await this.getAstrologerByUserId(userId);
-    return prisma.astrologer_documents.findMany({
+    const docs = await prisma.astrologer_documents.findMany({
       where: { astrologer_id: astro.astrologer_id },
       orderBy: { created_at: 'desc' }
     });
+    return docs.map(d => ({
+      documentId: d.document_id,
+      astrologerId: d.astrologer_id,
+      documentType: d.document_type,
+      documentName: d.document_name,
+      fileUrl: d.file_url,
+      fileSize: d.file_size,
+      mimeType: d.mime_type,
+      verificationStatus: d.verification_status,
+      rejectionReason: d.rejection_reason,
+      createdAt: d.created_at
+    }));
   }
 
   async uploadDocument(userId: bigint, dto: UploadDocumentDto) {
@@ -668,7 +701,18 @@ export class AstrologerService {
       }
     });
 
-    return doc;
+    return {
+      documentId: doc.document_id,
+      astrologerId: doc.astrologer_id,
+      documentType: doc.document_type,
+      documentName: doc.document_name,
+      fileUrl: doc.file_url,
+      fileSize: doc.file_size,
+      mimeType: doc.mime_type,
+      verificationStatus: doc.verification_status,
+      rejectionReason: doc.rejection_reason,
+      createdAt: doc.created_at
+    };
   }
 
   async getDocument(userId: bigint, docId: string) {
@@ -685,7 +729,18 @@ export class AstrologerService {
       throw new NotFoundError('Document not found', 'DOCUMENT_NOT_FOUND');
     }
 
-    return doc;
+    return {
+      documentId: doc.document_id,
+      astrologerId: doc.astrologer_id,
+      documentType: doc.document_type,
+      documentName: doc.document_name,
+      fileUrl: doc.file_url,
+      fileSize: doc.file_size,
+      mimeType: doc.mime_type,
+      verificationStatus: doc.verification_status,
+      rejectionReason: doc.rejection_reason,
+      createdAt: doc.created_at
+    };
   }
 
   async deleteDocument(userId: bigint, docId: string) {

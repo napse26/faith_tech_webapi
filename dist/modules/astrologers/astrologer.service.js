@@ -474,10 +474,21 @@ class AstrologerService {
     // 4. QUALIFICATIONS
     async getQualifications(userId) {
         const astro = await this.getAstrologerByUserId(userId);
-        return database_1.prisma.astrologer_qualifications.findMany({
+        const quals = await database_1.prisma.astrologer_qualifications.findMany({
             where: { astrologer_id: astro.astrologer_id },
             orderBy: { created_at: 'desc' }
         });
+        return quals.map(q => ({
+            qualificationId: q.qualification_id,
+            astrologerId: q.astrologer_id,
+            qualificationName: q.qualification_name,
+            institution: q.institution,
+            yearOfCompletion: q.year_of_completion,
+            description: q.description,
+            certificateUrl: q.certificate_url,
+            verificationStatus: q.verification_status,
+            createdAt: q.created_at
+        }));
     }
     async addQualification(userId, dto) {
         const astro = await this.getAstrologerByUserId(userId);
@@ -492,7 +503,17 @@ class AstrologerService {
                 verification_status: 'PENDING'
             }
         });
-        return qual;
+        return {
+            qualificationId: qual.qualification_id,
+            astrologerId: qual.astrologer_id,
+            qualificationName: qual.qualification_name,
+            institution: qual.institution,
+            yearOfCompletion: qual.year_of_completion,
+            description: qual.description,
+            certificateUrl: qual.certificate_url,
+            verificationStatus: qual.verification_status,
+            createdAt: qual.created_at
+        };
     }
     async updateQualification(userId, qualId, dto) {
         const astro = await this.getAstrologerByUserId(userId);
@@ -537,10 +558,22 @@ class AstrologerService {
     // 5. DOCUMENTS
     async getDocuments(userId) {
         const astro = await this.getAstrologerByUserId(userId);
-        return database_1.prisma.astrologer_documents.findMany({
+        const docs = await database_1.prisma.astrologer_documents.findMany({
             where: { astrologer_id: astro.astrologer_id },
             orderBy: { created_at: 'desc' }
         });
+        return docs.map(d => ({
+            documentId: d.document_id,
+            astrologerId: d.astrologer_id,
+            documentType: d.document_type,
+            documentName: d.document_name,
+            fileUrl: d.file_url,
+            fileSize: d.file_size,
+            mimeType: d.mime_type,
+            verificationStatus: d.verification_status,
+            rejectionReason: d.rejection_reason,
+            createdAt: d.created_at
+        }));
     }
     async uploadDocument(userId, dto) {
         const astro = await this.getAstrologerByUserId(userId);
@@ -555,7 +588,18 @@ class AstrologerService {
                 verification_status: 'PENDING_REVIEW'
             }
         });
-        return doc;
+        return {
+            documentId: doc.document_id,
+            astrologerId: doc.astrologer_id,
+            documentType: doc.document_type,
+            documentName: doc.document_name,
+            fileUrl: doc.file_url,
+            fileSize: doc.file_size,
+            mimeType: doc.mime_type,
+            verificationStatus: doc.verification_status,
+            rejectionReason: doc.rejection_reason,
+            createdAt: doc.created_at
+        };
     }
     async getDocument(userId, docId) {
         const astro = await this.getAstrologerByUserId(userId);
@@ -568,7 +612,18 @@ class AstrologerService {
         if (!doc) {
             throw new app_error_1.NotFoundError('Document not found', 'DOCUMENT_NOT_FOUND');
         }
-        return doc;
+        return {
+            documentId: doc.document_id,
+            astrologerId: doc.astrologer_id,
+            documentType: doc.document_type,
+            documentName: doc.document_name,
+            fileUrl: doc.file_url,
+            fileSize: doc.file_size,
+            mimeType: doc.mime_type,
+            verificationStatus: doc.verification_status,
+            rejectionReason: doc.rejection_reason,
+            createdAt: doc.created_at
+        };
     }
     async deleteDocument(userId, docId) {
         const astro = await this.getAstrologerByUserId(userId);

@@ -30,10 +30,19 @@ export class PoojaService {
   // =========================================================================
 
   async getCategories() {
-    return prisma.pooja_categories.findMany({
+    const categories = await prisma.pooja_categories.findMany({
       where: { is_active: true },
       orderBy: { sort_order: 'asc' }
     });
+    return categories.map(c => ({
+      categoryId: c.category_id,
+      name: c.name,
+      code: c.code,
+      description: c.description,
+      imageUrl: c.image_url,
+      sortOrder: c.sort_order,
+      isActive: c.is_active
+    }));
   }
 
   async listPoojas(query: PoojaFilterQuery) {
@@ -450,10 +459,6 @@ export class PoojaService {
       description: pooja.description,
       significance: pooja.significance,
       poojaProcess,
-      process: poojaProcess, // direct alias
-      ritualSteps: pooja.ritual_steps,
-      pooja_packages: pooja.pooja_packages,
-      pooja_addons: pooja.pooja_addons,
       packages: formattedPackages,
       packagesByTier,
       addons: pooja.pooja_addons.map(a => ({
@@ -742,38 +747,37 @@ export class PoojaService {
       const includesBhog = packageCode === 'JOINT_FAMILY_BHOG' || pkg.title.toLowerCase().includes('bhog');
       return {
         packageId: pkg.package_id,
-        package_id: pkg.package_id,
         poojaId: pkg.pooja_id,
-        pooja_id: pkg.pooja_id,
         packageCode,
-        package_code: packageCode,
         title: pkg.title,
         description: pkg.description,
         price: Number(pkg.price),
         discountPrice: Number(pkg.discount_price ?? pkg.price),
-        discount_price: Number(pkg.discount_price ?? pkg.price),
         durationMinutes: pkg.duration_minutes,
-        duration_minutes: pkg.duration_minutes,
         maxDevotees: pkg.max_devotees,
-        max_devotees: pkg.max_devotees,
         includesBhog,
         samagriIncluded: pkg.samagri_included,
-        samagri_included: pkg.samagri_included,
         priestLevel: pkg.priest_level,
-        priest_level: pkg.priest_level,
         deliveryMode: pkg.delivery_mode,
-        delivery_mode: pkg.delivery_mode,
-        isActive: pkg.is_active,
-        is_active: pkg.is_active
+        isActive: pkg.is_active
       };
     });
   }
 
   async getPoojaAddons(poojaId: string) {
-    return prisma.pooja_addons.findMany({
+    const addons = await prisma.pooja_addons.findMany({
       where: { pooja_id: poojaId, is_active: true },
       orderBy: { price: 'asc' }
     });
+    return addons.map(a => ({
+      addonId: a.addon_id,
+      poojaId: a.pooja_id,
+      title: a.title,
+      description: a.description,
+      price: Number(a.price),
+      maxQuantity: a.max_quantity ?? 10,
+      isActive: a.is_active
+    }));
   }
 
   async getPoojaAvailability(poojaId: string, startDate?: string, endDate?: string) {
@@ -1900,9 +1904,20 @@ export class PoojaService {
   // =========================================================================
 
   async listPriests() {
-    return prisma.priests.findMany({
+    const priests = await prisma.priests.findMany({
       orderBy: { rating: 'desc' }
     });
+    return priests.map(p => ({
+      priestId: p.priest_id,
+      name: p.name,
+      email: p.email,
+      phone: p.phone,
+      qualification: p.qualification,
+      experienceYears: p.experience_years,
+      rating: Number(p.rating),
+      templeAffiliation: p.temple_affiliation,
+      isActive: p.is_active
+    }));
   }
 
   async getPriestDetails(priestId: string) {
@@ -1914,7 +1929,17 @@ export class PoojaService {
       throw new NotFoundError('Priest not found', 'PRIEST_NOT_FOUND');
     }
 
-    return priest;
+    return {
+      priestId: priest.priest_id,
+      name: priest.name,
+      email: priest.email,
+      phone: priest.phone,
+      qualification: priest.qualification,
+      experienceYears: priest.experience_years,
+      rating: Number(priest.rating),
+      templeAffiliation: priest.temple_affiliation,
+      isActive: priest.is_active
+    };
   }
 
   // =========================================================================
