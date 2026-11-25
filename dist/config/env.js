@@ -12,6 +12,7 @@ const envSchema = zod_1.z.object({
     PORT: zod_1.z.string().transform(Number).default('3000'),
     API_BASE_URL: zod_1.z.string().url().default('http://localhost:3000'),
     DATABASE_URL: zod_1.z.string().min(1, 'DATABASE_URL is required'),
+    DIRECT_URL: zod_1.z.string().optional().default(''),
     REDIS_URL: zod_1.z.string().optional().default(''),
     JWT_ISSUER: zod_1.z.string().default('dharmadarshan-api'),
     JWT_AUDIENCE: zod_1.z.string().default('dharmadarshan-mobile'),
