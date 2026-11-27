@@ -2196,6 +2196,36 @@
         }
       }
     },
+    "/api/v1/astrologers/{astrologerId}": {
+      "get": {
+        "tags": [
+          "Astrologer Discovery (Public)"
+        ],
+        "summary": "Get public astrologer details and services",
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public astrologer details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/astrologers/{astrologerId}/profile": {
       "get": {
         "tags": [

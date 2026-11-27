@@ -27,10 +27,11 @@ const router = Router();
 // 1. PUBLIC DISCOVERY ENDPOINTS (Devotees / Customers / Public)
 // =========================================================================
 router.get('/', astrologerController.listPublicAstrologers);
-router.get('/:astrologerId/profile', astrologerController.getPublicProfile);
-router.get('/:astrologerId/availability', astrologerController.getPublicAvailability);
+router.get('/:astrologerId(\\d+)/profile', astrologerController.getPublicProfile);
+router.get('/:astrologerId(\\d+)/availability', astrologerController.getPublicAvailability);
 router.get('/:astrologerId/reviews', validate({ query: getAstrologerReviewsQuerySchema }), reviewController.getAstrologerReviews);
 router.get('/:astrologer_id/reviews', validate({ query: getAstrologerReviewsQuerySchema }), reviewController.getAstrologerReviews);
+router.get('/:astrologerId(\\d+)', astrologerController.getPublicProfile);
 
 // =========================================================================
 // 2. AUTHENTICATED ASTROLOGER ONBOARDING & PROFILE (Self)

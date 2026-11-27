@@ -862,6 +862,118 @@ class AstrologerService {
         };
     }
     // 9. PUBLIC DISCOVERY (Customers)
+    formatAstrologerCard(astro) {
+        const isOnline = Boolean(astro.is_online);
+        const isBusy = Boolean(astro.is_busy);
+        let status = 'OFFLINE';
+        if (isOnline) {
+            status = isBusy ? 'BUSY' : 'ONLINE';
+        }
+        const isAvailable = isOnline && !isBusy;
+        const specializations = (astro.astrologer_specializations || []).map((item) => {
+            const s = item.specializations || item;
+            return {
+                specialization_id: Number(s.specialization_id),
+                specialization_name: String(s.specialization_name || '')
+            };
+        });
+        const languages = (astro.astrologer_languages || []).map((item) => {
+            const l = item.languages || item;
+            return {
+                language_id: Number(l.language_id),
+                language_name: String(l.language_name || '')
+            };
+        });
+        let profileBadges = [];
+        if (Array.isArray(astro.profile_badges)) {
+            profileBadges = astro.profile_badges;
+        }
+        else if (typeof astro.profile_badges === 'string') {
+            try {
+                profileBadges = JSON.parse(astro.profile_badges);
+            }
+            catch {
+                profileBadges = [];
+            }
+        }
+        const chatPrice = astro.chat_rate !== null && astro.chat_rate !== undefined && Number(astro.chat_rate) > 0
+            ? Number(astro.chat_rate)
+            : 20;
+        const callPrice = astro.call_rate !== null && astro.call_rate !== undefined && Number(astro.call_rate) > 0
+            ? Number(astro.call_rate)
+            : 25;
+        const videoPrice = astro.video_rate !== null && astro.video_rate !== undefined && Number(astro.video_rate) > 0
+            ? Number(astro.video_rate)
+            : 40;
+        const services = [
+            {
+                service_code: 'CHAT',
+                service_name: 'Chat Consultation',
+                original_price: null,
+                current_price: chatPrice,
+                discount_percentage: null,
+                currency: 'INR',
+                pricing_unit: 'PER_MINUTE',
+                is_enabled: true,
+                is_available: isAvailable,
+                can_join_waitlist: false
+            },
+            {
+                service_code: 'CALL',
+                service_name: 'Call Consultation',
+                original_price: null,
+                current_price: callPrice,
+                discount_percentage: null,
+                currency: 'INR',
+                pricing_unit: 'PER_MINUTE',
+                is_enabled: true,
+                is_available: isAvailable,
+                can_join_waitlist: false
+            },
+            {
+                service_code: 'VIDEO',
+                service_name: 'Video Consultation',
+                original_price: null,
+                current_price: videoPrice,
+                discount_percentage: null,
+                currency: 'INR',
+                pricing_unit: 'PER_MINUTE',
+                is_enabled: true,
+                is_available: isAvailable,
+                can_join_waitlist: false
+            }
+        ];
+        return {
+            astrologer_id: Number(astro.astrologer_id),
+            display_name: astro.display_name,
+            gender: astro.gender ?? null,
+            experience_years: astro.experience_years !== null && astro.experience_years !== undefined ? Number(astro.experience_years) : 0,
+            qualification: astro.qualification ?? null,
+            about_me: astro.about_me ?? null,
+            profile_image: astro.profile_image ?? null,
+            cover_image: astro.cover_image ?? null,
+            avg_rating: astro.avg_rating !== null && astro.avg_rating !== undefined ? Number(Number(astro.avg_rating).toFixed(2)) : 0,
+            total_reviews: astro.total_reviews !== null && astro.total_reviews !== undefined ? Number(astro.total_reviews) : 0,
+            total_consultations: astro.total_consultations !== null && astro.total_consultations !== undefined ? Number(astro.total_consultations) : null,
+            is_verified: astro.is_verified !== null && astro.is_verified !== undefined ? Boolean(astro.is_verified) : null,
+            is_recommended: astro.is_recommended !== null && astro.is_recommended !== undefined ? Boolean(astro.is_recommended) : null,
+            is_featured: astro.is_featured !== null && astro.is_featured !== undefined ? Boolean(astro.is_featured) : false,
+            response_time_minutes: astro.response_time_minutes !== null && astro.response_time_minutes !== undefined ? Number(astro.response_time_minutes) : null,
+            availability: {
+                status,
+                is_available: isAvailable,
+                waiting_list_count: astro.waiting_list_count !== null && astro.waiting_list_count !== undefined ? Number(astro.waiting_list_count) : null,
+                next_available_at: null
+            },
+            profile_badges: profileBadges,
+            astrology_tradition: astro.astrology_tradition ?? null,
+            city: astro.city ?? null,
+            state: astro.state ?? null,
+            specializations,
+            languages,
+            services
+        };
+    }
     async listPublicAstrologers(query) {
         const page = Math.max(1, query.page || 1);
         const limit = Math.min(50, Math.max(1, query.limit || 10));
@@ -874,6 +986,12 @@ class AstrologerService {
         }
         if (query.gender) {
             where.gender = query.gender;
+        }
+        if (query.isFeatured !== undefined) {
+            where.is_featured = query.isFeatured;
+        }
+        if (query.isRecommended !== undefined) {
+            where.is_recommended = query.isRecommended;
         }
         if (query.search) {
             where.OR = [
@@ -892,13 +1010,15 @@ class AstrologerService {
                 some: { language_id: query.languageId }
             };
         }
-        let orderBy = { avg_rating: 'desc' };
+        let orderBy = [{ is_featured: 'desc' }, { avg_rating: 'desc' }];
         if (query.sortBy === 'experience')
-            orderBy = { experience_years: 'desc' };
+            orderBy = [{ is_featured: 'desc' }, { experience_years: 'desc' }];
         if (query.sortBy === 'price_asc')
-            orderBy = { chat_rate: 'asc' };
+            orderBy = [{ is_featured: 'desc' }, { chat_rate: 'asc' }];
         if (query.sortBy === 'price_desc')
-            orderBy = { chat_rate: 'desc' };
+            orderBy = [{ is_featured: 'desc' }, { chat_rate: 'desc' }];
+        if (query.sortBy === 'rating')
+            orderBy = [{ is_featured: 'desc' }, { avg_rating: 'desc' }];
         const [total, list] = await Promise.all([
             database_1.prisma.astrologers.count({ where }),
             database_1.prisma.astrologers.findMany({
@@ -920,6 +1040,13 @@ class AstrologerService {
                     video_rate: true,
                     avg_rating: true,
                     total_reviews: true,
+                    total_consultations: true,
+                    is_verified: true,
+                    is_recommended: true,
+                    is_featured: true,
+                    response_time_minutes: true,
+                    waiting_list_count: true,
+                    profile_badges: true,
                     is_online: true,
                     is_busy: true,
                     astrology_tradition: true,
@@ -935,15 +1062,12 @@ class AstrologerService {
             })
         ]);
         return {
-            astrologers: list.map(a => ({
-                ...a,
-                specializations: a.astrologer_specializations.map(s => s.specializations),
-                languages: a.astrologer_languages.map(l => l.languages)
-            })),
+            astrologers: list.map(a => this.formatAstrologerCard(a)),
             pagination: {
                 total,
                 page,
                 limit,
+                total_pages: Math.ceil(total / limit),
                 totalPages: Math.ceil(total / limit)
             }
         };
@@ -954,48 +1078,44 @@ class AstrologerService {
                 astrologer_id: astrologerId,
                 onboarding_status: 'APPROVED'
             },
-            include: {
-                astrologer_specializations: { include: { specializations: true } },
-                astrologer_languages: { include: { languages: true } },
-                astrologer_qualifications: {
-                    where: { verification_status: 'VERIFIED' }
+            select: {
+                astrologer_id: true,
+                display_name: true,
+                gender: true,
+                experience_years: true,
+                qualification: true,
+                about_me: true,
+                profile_image: true,
+                cover_image: true,
+                chat_rate: true,
+                call_rate: true,
+                video_rate: true,
+                avg_rating: true,
+                total_reviews: true,
+                total_consultations: true,
+                is_verified: true,
+                is_recommended: true,
+                is_featured: true,
+                response_time_minutes: true,
+                waiting_list_count: true,
+                profile_badges: true,
+                is_online: true,
+                is_busy: true,
+                astrology_tradition: true,
+                city: true,
+                state: true,
+                astrologer_specializations: {
+                    select: { specializations: true }
                 },
-                astrologer_services: {
-                    where: { status: 1 },
-                    include: { service_master: true }
+                astrologer_languages: {
+                    select: { languages: true }
                 }
             }
         });
         if (!astro) {
             throw new app_error_1.NotFoundError('Astrologer not found or not approved', 'ASTROLOGER_NOT_FOUND');
         }
-        return {
-            astrologerId: astro.astrologer_id,
-            displayName: astro.display_name,
-            gender: astro.gender,
-            experienceYears: astro.experience_years,
-            qualification: astro.qualification,
-            aboutMe: astro.about_me,
-            astrologyTradition: astro.astrology_tradition,
-            profileImage: astro.profile_image,
-            coverImage: astro.cover_image,
-            city: astro.city,
-            state: astro.state,
-            country: astro.country,
-            rates: {
-                chatRate: astro.chat_rate,
-                callRate: astro.call_rate,
-                videoRate: astro.video_rate
-            },
-            avgRating: astro.avg_rating,
-            totalReviews: astro.total_reviews,
-            isOnline: astro.is_online,
-            isBusy: astro.is_busy,
-            specializations: astro.astrologer_specializations.map(s => s.specializations),
-            languages: astro.astrologer_languages.map(l => l.languages),
-            qualifications: astro.astrologer_qualifications,
-            services: astro.astrologer_services.map(s => s.service_master)
-        };
+        return this.formatAstrologerCard(astro);
     }
     async getPublicAvailability(astrologerId) {
         const astro = await database_1.prisma.astrologers.findFirst({

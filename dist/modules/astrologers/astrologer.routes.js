@@ -13,10 +13,11 @@ const router = (0, express_1.Router)();
 // 1. PUBLIC DISCOVERY ENDPOINTS (Devotees / Customers / Public)
 // =========================================================================
 router.get('/', astrologer_controller_1.astrologerController.listPublicAstrologers);
-router.get('/:astrologerId/profile', astrologer_controller_1.astrologerController.getPublicProfile);
-router.get('/:astrologerId/availability', astrologer_controller_1.astrologerController.getPublicAvailability);
+router.get('/:astrologerId(\\d+)/profile', astrologer_controller_1.astrologerController.getPublicProfile);
+router.get('/:astrologerId(\\d+)/availability', astrologer_controller_1.astrologerController.getPublicAvailability);
 router.get('/:astrologerId/reviews', (0, validate_1.validate)({ query: review_schemas_1.getAstrologerReviewsQuerySchema }), review_controller_1.reviewController.getAstrologerReviews);
 router.get('/:astrologer_id/reviews', (0, validate_1.validate)({ query: review_schemas_1.getAstrologerReviewsQuerySchema }), review_controller_1.reviewController.getAstrologerReviews);
+router.get('/:astrologerId(\\d+)', astrologer_controller_1.astrologerController.getPublicProfile);
 // =========================================================================
 // 2. AUTHENTICATED ASTROLOGER ONBOARDING & PROFILE (Self)
 // =========================================================================

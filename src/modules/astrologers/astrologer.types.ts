@@ -151,4 +151,6 @@ export interface AstrologerFilterQuery {
   sortBy?: 'rating' | 'experience' | 'price_asc' | 'price_desc';
   onboardingStatus?: string;
   isOnline?: boolean;
+  isFeatured?: boolean;
+  isRecommended?: boolean;
 }

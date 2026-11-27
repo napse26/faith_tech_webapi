@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.astrologerController = exports.AstrologerController = void 0;
 const astrologer_service_1 = require("./astrologer.service");
 const api_response_1 = require("../../common/types/api-response");
+const app_error_1 = require("../../common/errors/app-error");
 class AstrologerController {
     // 1. APPLICATION & ONBOARDING
     async apply(req, res, next) {
@@ -345,6 +346,8 @@ class AstrologerController {
             const specializationId = req.query.specializationId ? parseInt(req.query.specializationId, 10) : undefined;
             const languageId = req.query.languageId ? parseInt(req.query.languageId, 10) : undefined;
             const isOnline = req.query.isOnline !== undefined ? req.query.isOnline === 'true' : undefined;
+            const isFeatured = req.query.isFeatured !== undefined ? req.query.isFeatured === 'true' : (req.query.is_featured !== undefined ? req.query.is_featured === 'true' : undefined);
+            const isRecommended = req.query.isRecommended !== undefined ? req.query.isRecommended === 'true' : (req.query.is_recommended !== undefined ? req.query.is_recommended === 'true' : undefined);
             const result = await astrologer_service_1.astrologerService.listPublicAstrologers({
                 page,
                 limit,
@@ -353,7 +356,9 @@ class AstrologerController {
                 specializationId,
                 languageId,
                 sortBy: req.query.sortBy,
-                isOnline
+                isOnline,
+                isFeatured,
+                isRecommended
             });
             res.status(200).json((0, api_response_1.createSuccessResponse)(result, 'Astrologers retrieved successfully', req.traceId));
         }
@@ -363,9 +368,14 @@ class AstrologerController {
     }
     async getPublicProfile(req, res, next) {
         try {
-            const astrologerId = BigInt(req.params.astrologerId);
+            const rawId = req.params.astrologerId || req.params.id;
+            const idStr = Array.isArray(rawId) ? rawId[0] : (rawId ? String(rawId) : '');
+            if (!idStr || isNaN(Number(idStr))) {
+                throw new app_error_1.BadRequestError('Invalid astrologer ID', 'INVALID_ASTROLOGER_ID');
+            }
+            const astrologerId = BigInt(idStr);
             const result = await astrologer_service_1.astrologerService.getPublicProfile(astrologerId);
-            res.status(200).json((0, api_response_1.createSuccessResponse)(result, 'Astrologer public profile retrieved', req.traceId));
+            res.status(200).json((0, api_response_1.createSuccessResponse)(result, 'Astrologer retrieved successfully', req.traceId));
         }
         catch (error) {
             next(error);
@@ -373,7 +383,12 @@ class AstrologerController {
     }
     async getPublicAvailability(req, res, next) {
         try {
-            const astrologerId = BigInt(req.params.astrologerId);
+            const rawId = req.params.astrologerId;
+            const idStr = Array.isArray(rawId) ? rawId[0] : (rawId ? String(rawId) : '');
+            if (!idStr || isNaN(Number(idStr))) {
+                throw new app_error_1.BadRequestError('Invalid astrologer ID', 'INVALID_ASTROLOGER_ID');
+            }
+            const astrologerId = BigInt(idStr);
             const result = await astrologer_service_1.astrologerService.getPublicAvailability(astrologerId);
             res.status(200).json((0, api_response_1.createSuccessResponse)(result, 'Astrologer public availability retrieved', req.traceId));
         }

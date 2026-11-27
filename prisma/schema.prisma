@@ -250,6 +250,12 @@ model astrologers {
   reviewed_by                          BigInt?
   rejection_reason                     String?
   admin_notes                          String?
+  total_consultations                  Int?
+  is_recommended                       Boolean?
+  is_featured                          Boolean?                             @default(false)
+  response_time_minutes                Int?
+  waiting_list_count                   Int?
+  profile_badges                       Json?
   appointments                         appointments[]
   astrologer_availability              astrologer_availability[]
   astrologer_availability_exceptions   astrologer_availability_exceptions[]
