@@ -22,6 +22,7 @@ import { poojaRoutes } from './modules/poojas/pooja.routes';
 import { poojaBookingRoutes } from './modules/poojas/pooja-booking.routes';
 import { adminPoojaRoutes } from './modules/poojas/admin-pooja.routes';
 import { adminPoojaBookingRoutes } from './modules/poojas/admin-pooja-booking.routes';
+import { reviewRoutes } from './modules/reviews/review.routes';
 
 // Ensure BigInt values serialize cleanly to JSON
 (BigInt.prototype as any).toJSON = function () {
@@ -149,6 +150,7 @@ export function createApp(): Express {
   app.use('/api/v1/pooja-bookings', poojaBookingRoutes);
   app.use('/api/v1/admin/poojas', adminPoojaRoutes);
   app.use('/api/v1/admin/pooja-bookings', adminPoojaBookingRoutes);
+  app.use('/api/v1', reviewRoutes);
 
   // Catch-all 404 handler
   app.use((req: Request, res: Response) => {

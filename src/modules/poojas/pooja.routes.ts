@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { poojaController } from './pooja.controller';
+import { reviewController } from '../reviews/review.controller';
+import { getPoojaReviewsQuerySchema } from '../reviews/review.schemas';
 import { authenticate } from '../../common/middleware/auth.middleware';
 import { validate } from '../../common/middleware/validate';
 import { submitPoojaReviewSchema } from './pooja.schemas';
@@ -19,7 +21,8 @@ router.get('/:poojaIdOrSlug', poojaController.getPoojaDetails);
 router.get('/:poojaIdOrSlug/process', poojaController.getPoojaProcess);
 router.get('/:poojaIdOrSlug/participants', poojaController.getPoojaParticipants);
 router.get('/:poojaIdOrSlug/packages', poojaController.getPoojaPackages);
-router.get('/:poojaIdOrSlug/reviews', poojaController.getPoojaReviews);
+router.get('/:poojaIdOrSlug/reviews', validate({ query: getPoojaReviewsQuerySchema }), reviewController.getPoojaReviews);
+router.get('/:pooja_id/reviews', validate({ query: getPoojaReviewsQuerySchema }), reviewController.getPoojaReviews);
 router.post(
   '/:poojaId/reviews',
   authenticate,

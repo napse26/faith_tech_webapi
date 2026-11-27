@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { customerFamilyController } from './customer-family.controller';
+import { reviewController } from '../reviews/review.controller';
 import { authenticate } from '../../common/middleware/auth.middleware';
 import { validate } from '../../common/middleware/validate';
 import {
@@ -7,6 +8,7 @@ import {
   updateFamilyMemberSchema,
   getFollowingQuerySchema
 } from './customer-family.schemas';
+import { submitReviewSchema } from '../reviews/review.schemas';
 
 const router = Router();
 
@@ -60,6 +62,15 @@ router.get(
   '/astrologers/following',
   validate({ query: getFollowingQuerySchema }),
   customerFamilyController.getFollowedAstrologers
+);
+
+// =========================================================================
+// REVIEWS API (Generic Review System)
+// =========================================================================
+router.post(
+  '/reviews',
+  validate({ body: submitReviewSchema }),
+  reviewController.submitReview
 );
 
 export const customerV1Router = router;

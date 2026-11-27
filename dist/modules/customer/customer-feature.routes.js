@@ -3,9 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.customerV1Router = void 0;
 const express_1 = require("express");
 const customer_family_controller_1 = require("./customer-family.controller");
+const review_controller_1 = require("../reviews/review.controller");
 const auth_middleware_1 = require("../../common/middleware/auth.middleware");
 const validate_1 = require("../../common/middleware/validate");
 const customer_family_schemas_1 = require("./customer-family.schemas");
+const review_schemas_1 = require("../reviews/review.schemas");
 const router = (0, express_1.Router)();
 // Apply JWT authentication
 router.use(auth_middleware_1.authenticate);
@@ -23,4 +25,8 @@ router.delete('/family-members/:member_id', customer_family_controller_1.custome
 router.post('/astrologers/:astrologer_id/follow', customer_family_controller_1.customerFamilyController.followAstrologer);
 router.delete('/astrologers/:astrologer_id/follow', customer_family_controller_1.customerFamilyController.unfollowAstrologer);
 router.get('/astrologers/following', (0, validate_1.validate)({ query: customer_family_schemas_1.getFollowingQuerySchema }), customer_family_controller_1.customerFamilyController.getFollowedAstrologers);
+// =========================================================================
+// REVIEWS API (Generic Review System)
+// =========================================================================
+router.post('/reviews', (0, validate_1.validate)({ body: review_schemas_1.submitReviewSchema }), review_controller_1.reviewController.submitReview);
 exports.customerV1Router = router;

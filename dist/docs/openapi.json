@@ -7986,6 +7986,582 @@
           }
         }
       }
+    },
+    "/api/v1/customer/reviews": {
+      "post": {
+        "summary": "Submit a review for a completed booking",
+        "description": "Create or update a customer review for an astrologer consultation or a pooja booking. Enforces one review per booking.",
+        "tags": [
+          "Customer - Reviews"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "review_type",
+                  "booking_id",
+                  "rating"
+                ],
+                "properties": {
+                  "review_type": {
+                    "type": "string",
+                    "enum": [
+                      "ASTROLOGER",
+                      "POOJA"
+                    ],
+                    "example": "ASTROLOGER",
+                    "description": "Entity type being reviewed"
+                  },
+                  "astrologer_id": {
+                    "type": "string",
+                    "example": "1",
+                    "description": "Required if review_type is ASTROLOGER"
+                  },
+                  "service_id": {
+                    "type": "string",
+                    "example": "3",
+                    "description": "Consultation service ID (Chat, Call, Video). Required if review_type is ASTROLOGER"
+                  },
+                  "pooja_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "example": "d9b3a0e1-4c28-4e8a-bf92-e9102c4819aa",
+                    "description": "Required if review_type is POOJA"
+                  },
+                  "booking_id": {
+                    "type": "string",
+                    "example": "consultation-booking-101",
+                    "description": "Identifies the completed consultation or pooja booking"
+                  },
+                  "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "example": 5,
+                    "description": "Rating integer from 1 to 5"
+                  },
+                  "review_text": {
+                    "type": "string",
+                    "example": "The astrologer provided excellent guidance and explained everything clearly."
+                  },
+                  "reviewer_name": {
+                    "type": "string",
+                    "example": "Rameshwar Kulkarni"
+                  },
+                  "reviewer_city": {
+                    "type": "string",
+                    "example": "Pune"
+                  },
+                  "is_anonymous": {
+                    "type": "boolean",
+                    "default": false,
+                    "example": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Review submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Review submitted successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "review_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "example": "bb0a8c5c-c3b2-4869-921e-7cc41cdeb53b"
+                        },
+                        "review_type": {
+                          "type": "string",
+                          "example": "ASTROLOGER"
+                        },
+                        "astrologer_id": {
+                          "type": "string",
+                          "example": "1"
+                        },
+                        "service_id": {
+                          "type": "string",
+                          "example": "3"
+                        },
+                        "pooja_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "booking_id": {
+                          "type": "string",
+                          "example": "consultation-booking-101"
+                        },
+                        "rating": {
+                          "type": "integer",
+                          "example": 5
+                        },
+                        "review_text": {
+                          "type": "string",
+                          "example": "The astrologer provided excellent guidance and explained everything clearly."
+                        },
+                        "reviewer_name": {
+                          "type": "string",
+                          "example": "Rameshwar Kulkarni"
+                        },
+                        "reviewer_city": {
+                          "type": "string",
+                          "example": "Pune"
+                        },
+                        "is_anonymous": {
+                          "type": "boolean",
+                          "example": false
+                        },
+                        "review_status": {
+                          "type": "string",
+                          "example": "APPROVED"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-11-26T10:30:00Z"
+                        }
+                      }
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {},
+                      "example": []
+                    },
+                    "trace_id": {
+                      "type": "string",
+                      "example": "8f79cda1-ecae-4b34-9d17-f1c01a5f9ecf"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/{astrologer_id}/reviews": {
+      "get": {
+        "summary": "Retrieve reviews for an astrologer",
+        "description": "Retrieve public reviews, rating summary, and average rating for an astrologer with optional service_id filtering.",
+        "tags": [
+          "Reviews - Astrologers"
+        ],
+        "parameters": [
+          {
+            "name": "astrologer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID of the astrologer"
+          },
+          {
+            "name": "service_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional consultation service ID (e.g. Chat, Call, Video) to filter reviews"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reviews retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Reviews retrieved successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "entity_type": {
+                          "type": "string",
+                          "enum": [
+                            "ASTROLOGER",
+                            "POOJA"
+                          ],
+                          "example": "ASTROLOGER"
+                        },
+                        "entity_id": {
+                          "type": "string",
+                          "example": "1"
+                        },
+                        "service_id": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "3"
+                        },
+                        "average_rating": {
+                          "type": "number",
+                          "example": 4.85
+                        },
+                        "total_reviews": {
+                          "type": "integer",
+                          "example": 125
+                        },
+                        "rating_summary": {
+                          "type": "object",
+                          "properties": {
+                            "1": {
+                              "type": "integer",
+                              "example": 2
+                            },
+                            "2": {
+                              "type": "integer",
+                              "example": 3
+                            },
+                            "3": {
+                              "type": "integer",
+                              "example": 5
+                            },
+                            "4": {
+                              "type": "integer",
+                              "example": 15
+                            },
+                            "5": {
+                              "type": "integer",
+                              "example": 100
+                            }
+                          }
+                        },
+                        "reviews": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "review_id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "example": "bb0a8c5c-c3b2-4869-921e-7cc41cdeb53b"
+                              },
+                              "rating": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 5,
+                                "example": 5
+                              },
+                              "review_text": {
+                                "type": "string",
+                                "nullable": true,
+                                "example": "The astrologer provided excellent guidance and explained everything clearly."
+                              },
+                              "reviewer_name": {
+                                "type": "string",
+                                "example": "Rameshwar Kulkarni"
+                              },
+                              "reviewer_city": {
+                                "type": "string",
+                                "nullable": true,
+                                "example": "Pune"
+                              },
+                              "is_anonymous": {
+                                "type": "boolean",
+                                "example": false
+                              },
+                              "service_name": {
+                                "type": "string",
+                                "nullable": true,
+                                "example": "Chat Consultation"
+                              },
+                              "is_verified_purchase": {
+                                "type": "boolean",
+                                "example": true
+                              },
+                              "created_at": {
+                                "type": "string",
+                                "format": "date-time",
+                                "example": "2026-11-25T10:30:00Z"
+                              }
+                            }
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "example": 125
+                            },
+                            "page": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "limit": {
+                              "type": "integer",
+                              "example": 10
+                            },
+                            "total_pages": {
+                              "type": "integer",
+                              "example": 13
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {},
+                      "example": []
+                    },
+                    "trace_id": {
+                      "type": "string",
+                      "example": "8f79cda1-ecae-4b34-9d17-f1c01a5f9ecf"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/poojas/{pooja_id}/reviews": {
+      "get": {
+        "summary": "Retrieve reviews for a pooja",
+        "description": "Retrieve public reviews, rating summary, and average rating for a pooja catalog item.",
+        "tags": [
+          "Reviews - Poojas"
+        ],
+        "parameters": [
+          {
+            "name": "pooja_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "UUID or slug of the pooja"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reviews retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Reviews retrieved successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "entity_type": {
+                          "type": "string",
+                          "enum": [
+                            "ASTROLOGER",
+                            "POOJA"
+                          ],
+                          "example": "ASTROLOGER"
+                        },
+                        "entity_id": {
+                          "type": "string",
+                          "example": "1"
+                        },
+                        "service_id": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "3"
+                        },
+                        "average_rating": {
+                          "type": "number",
+                          "example": 4.85
+                        },
+                        "total_reviews": {
+                          "type": "integer",
+                          "example": 125
+                        },
+                        "rating_summary": {
+                          "type": "object",
+                          "properties": {
+                            "1": {
+                              "type": "integer",
+                              "example": 2
+                            },
+                            "2": {
+                              "type": "integer",
+                              "example": 3
+                            },
+                            "3": {
+                              "type": "integer",
+                              "example": 5
+                            },
+                            "4": {
+                              "type": "integer",
+                              "example": 15
+                            },
+                            "5": {
+                              "type": "integer",
+                              "example": 100
+                            }
+                          }
+                        },
+                        "reviews": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "review_id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "example": "bb0a8c5c-c3b2-4869-921e-7cc41cdeb53b"
+                              },
+                              "rating": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 5,
+                                "example": 5
+                              },
+                              "review_text": {
+                                "type": "string",
+                                "nullable": true,
+                                "example": "The astrologer provided excellent guidance and explained everything clearly."
+                              },
+                              "reviewer_name": {
+                                "type": "string",
+                                "example": "Rameshwar Kulkarni"
+                              },
+                              "reviewer_city": {
+                                "type": "string",
+                                "nullable": true,
+                                "example": "Pune"
+                              },
+                              "is_anonymous": {
+                                "type": "boolean",
+                                "example": false
+                              },
+                              "service_name": {
+                                "type": "string",
+                                "nullable": true,
+                                "example": "Chat Consultation"
+                              },
+                              "is_verified_purchase": {
+                                "type": "boolean",
+                                "example": true
+                              },
+                              "created_at": {
+                                "type": "string",
+                                "format": "date-time",
+                                "example": "2026-11-25T10:30:00Z"
+                              }
+                            }
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "example": 125
+                            },
+                            "page": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "limit": {
+                              "type": "integer",
+                              "example": 10
+                            },
+                            "total_pages": {
+                              "type": "integer",
+                              "example": 13
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {},
+                      "example": []
+                    },
+                    "trace_id": {
+                      "type": "string",
+                      "example": "8f79cda1-ecae-4b34-9d17-f1c01a5f9ecf"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "tags": [

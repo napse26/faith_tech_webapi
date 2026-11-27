@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.poojaRoutes = void 0;
 const express_1 = require("express");
 const pooja_controller_1 = require("./pooja.controller");
+const review_controller_1 = require("../reviews/review.controller");
+const review_schemas_1 = require("../reviews/review.schemas");
 const auth_middleware_1 = require("../../common/middleware/auth.middleware");
 const validate_1 = require("../../common/middleware/validate");
 const pooja_schemas_1 = require("./pooja.schemas");
@@ -19,7 +21,8 @@ router.get('/:poojaIdOrSlug', pooja_controller_1.poojaController.getPoojaDetails
 router.get('/:poojaIdOrSlug/process', pooja_controller_1.poojaController.getPoojaProcess);
 router.get('/:poojaIdOrSlug/participants', pooja_controller_1.poojaController.getPoojaParticipants);
 router.get('/:poojaIdOrSlug/packages', pooja_controller_1.poojaController.getPoojaPackages);
-router.get('/:poojaIdOrSlug/reviews', pooja_controller_1.poojaController.getPoojaReviews);
+router.get('/:poojaIdOrSlug/reviews', (0, validate_1.validate)({ query: review_schemas_1.getPoojaReviewsQuerySchema }), review_controller_1.reviewController.getPoojaReviews);
+router.get('/:pooja_id/reviews', (0, validate_1.validate)({ query: review_schemas_1.getPoojaReviewsQuerySchema }), review_controller_1.reviewController.getPoojaReviews);
 router.post('/:poojaId/reviews', auth_middleware_1.authenticate, (0, validate_1.validate)({ body: pooja_schemas_1.submitPoojaReviewSchema }), pooja_controller_1.poojaController.submitPoojaReview);
 router.get('/:poojaId/packages', pooja_controller_1.poojaController.getPoojaPackages);
 router.get('/:poojaId/addons', pooja_controller_1.poojaController.getPoojaAddons);

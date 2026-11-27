@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.astrologerRoutes = void 0;
 const express_1 = require("express");
 const astrologer_controller_1 = require("./astrologer.controller");
+const review_controller_1 = require("../reviews/review.controller");
+const review_schemas_1 = require("../reviews/review.schemas");
 const auth_middleware_1 = require("../../common/middleware/auth.middleware");
 const validate_1 = require("../../common/middleware/validate");
 const astrologer_schemas_1 = require("./astrologer.schemas");
@@ -13,6 +15,8 @@ const router = (0, express_1.Router)();
 router.get('/', astrologer_controller_1.astrologerController.listPublicAstrologers);
 router.get('/:astrologerId/profile', astrologer_controller_1.astrologerController.getPublicProfile);
 router.get('/:astrologerId/availability', astrologer_controller_1.astrologerController.getPublicAvailability);
+router.get('/:astrologerId/reviews', (0, validate_1.validate)({ query: review_schemas_1.getAstrologerReviewsQuerySchema }), review_controller_1.reviewController.getAstrologerReviews);
+router.get('/:astrologer_id/reviews', (0, validate_1.validate)({ query: review_schemas_1.getAstrologerReviewsQuerySchema }), review_controller_1.reviewController.getAstrologerReviews);
 // =========================================================================
 // 2. AUTHENTICATED ASTROLOGER ONBOARDING & PROFILE (Self)
 // =========================================================================

@@ -266,6 +266,7 @@ model astrologers {
   customer_recent_astrologers          customer_recent_astrologers[]
   favorite_astrologers                 favorite_astrologers[]
   customer_astrologer_follows          customer_astrologer_follows[]
+  common_reviews                       common_reviews[]
   reviews                              reviews[]
   user_consultation_sessions_detail    user_consultation_sessions_detail[]
 
@@ -327,6 +328,34 @@ model coupons {
   discount_value Decimal   @db.Decimal(10, 2)
   expiry_date    DateTime? @db.Timestamptz(6)
   is_active      Boolean?  @default(true)
+}
+
+model common_reviews {
+  review_id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id          BigInt
+  review_type          String       @db.VarChar(30)
+  astrologer_id        BigInt?
+  service_id           String?      @db.VarChar(100)
+  pooja_id             String?      @db.Uuid
+  booking_id           String       @db.VarChar(100)
+  rating               Int
+  review_text          String?
+  reviewer_name        String?      @db.VarChar(150)
+  reviewer_city        String?      @db.VarChar(100)
+  is_anonymous         Boolean      @default(false)
+  is_verified_purchase Boolean      @default(true)
+  review_status        String       @default("APPROVED") @db.VarChar(20)
+  created_at           DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime     @default(now()) @db.Timestamptz(6)
+  users                users        @relation(fields: [customer_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  astrologers          astrologers? @relation(fields: [astrologer_id], references: [astrologer_id], onDelete: Cascade, onUpdate: NoAction)
+  poojas               poojas?      @relation(fields: [pooja_id], references: [pooja_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([review_type, booking_id], map: "uq_common_reviews_booking")
+  @@index([customer_id], map: "idx_common_reviews_customer")
+  @@index([astrologer_id, review_status], map: "idx_common_reviews_astro")
+  @@index([pooja_id, review_status], map: "idx_common_reviews_pooja")
+  @@index([booking_id], map: "idx_common_reviews_booking")
 }
 
 model customer_astrologer_follows {
@@ -681,6 +710,7 @@ model poojas {
   pooja_quotes              pooja_quotes[]
   pooja_slots               pooja_slots[]
   pooja_reviews             pooja_reviews[]
+  common_reviews            common_reviews[]
   pooja_categories          pooja_categories @relation(fields: [category_id], references: [category_id], onUpdate: NoAction)
   priests                   priests?         @relation("poojas_primary_priest", fields: [primary_priest_id], references: [priest_id], onUpdate: NoAction)
 
@@ -1028,6 +1058,7 @@ model users {
   customer_preferences                                 customer_preferences?
   customer_recent_astrologers                          customer_recent_astrologers[]
   customer_astrologer_follows                          customer_astrologer_follows[]
+  common_reviews                                       common_reviews[]
   document_master                                      document_master[]
   favorite_astrologers                                 favorite_astrologers[]
   kundli_profiles                                      kundli_profiles[]

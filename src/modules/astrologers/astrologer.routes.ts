@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { astrologerController } from './astrologer.controller';
+import { reviewController } from '../reviews/review.controller';
+import { getAstrologerReviewsQuerySchema } from '../reviews/review.schemas';
 import { authenticate } from '../../common/middleware/auth.middleware';
 import { validate } from '../../common/middleware/validate';
 import {
@@ -27,6 +29,8 @@ const router = Router();
 router.get('/', astrologerController.listPublicAstrologers);
 router.get('/:astrologerId/profile', astrologerController.getPublicProfile);
 router.get('/:astrologerId/availability', astrologerController.getPublicAvailability);
+router.get('/:astrologerId/reviews', validate({ query: getAstrologerReviewsQuerySchema }), reviewController.getAstrologerReviews);
+router.get('/:astrologer_id/reviews', validate({ query: getAstrologerReviewsQuerySchema }), reviewController.getAstrologerReviews);
 
 // =========================================================================
 // 2. AUTHENTICATED ASTROLOGER ONBOARDING & PROFILE (Self)
