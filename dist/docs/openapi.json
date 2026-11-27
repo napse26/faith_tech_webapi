@@ -6764,6 +6764,1228 @@
           }
         }
       }
+    },
+    "/api/v1/customer/family-members": {
+      "post": {
+        "summary": "Add family member",
+        "description": "Allow customers to save family members birth details and reuse them for Kundli, horoscope, compatibility, astrology consultations, and other services.",
+        "tags": [
+          "Customer - Family Members"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "full_name",
+                  "relationship",
+                  "date_of_birth"
+                ],
+                "properties": {
+                  "full_name": {
+                    "type": "string",
+                    "example": "Komal Singh"
+                  },
+                  "relationship": {
+                    "type": "string",
+                    "enum": [
+                      "SELF",
+                      "SPOUSE",
+                      "SON",
+                      "DAUGHTER",
+                      "FATHER",
+                      "MOTHER",
+                      "BROTHER",
+                      "SISTER",
+                      "GRANDFATHER",
+                      "GRANDMOTHER",
+                      "OTHER"
+                    ],
+                    "example": "SPOUSE"
+                  },
+                  "gender": {
+                    "type": "string",
+                    "enum": [
+                      "MALE",
+                      "FEMALE",
+                      "OTHER",
+                      "PREFER_NOT_TO_SAY"
+                    ],
+                    "example": "FEMALE"
+                  },
+                  "date_of_birth": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "1997-05-15"
+                  },
+                  "time_of_birth": {
+                    "type": "string",
+                    "example": "08:30:00"
+                  },
+                  "birth_place": {
+                    "type": "object",
+                    "properties": {
+                      "place_name": {
+                        "type": "string",
+                        "example": "Ghaziabad"
+                      },
+                      "city": {
+                        "type": "string",
+                        "nullable": true,
+                        "example": "Ghaziabad"
+                      },
+                      "state": {
+                        "type": "string",
+                        "nullable": true,
+                        "example": "Uttar Pradesh"
+                      },
+                      "country": {
+                        "type": "string",
+                        "example": "India"
+                      },
+                      "latitude": {
+                        "type": "number",
+                        "nullable": true,
+                        "example": 28.6692
+                      },
+                      "longitude": {
+                        "type": "number",
+                        "nullable": true,
+                        "example": 77.4538
+                      },
+                      "timezone": {
+                        "type": "string",
+                        "example": "Asia/Kolkata"
+                      }
+                    },
+                    "required": [
+                      "place_name"
+                    ]
+                  },
+                  "is_default": {
+                    "type": "boolean",
+                    "example": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Family member added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Family member added successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "member_id": {
+                          "type": "integer",
+                          "example": 201
+                        },
+                        "full_name": {
+                          "type": "string",
+                          "example": "Komal Singh"
+                        },
+                        "relationship": {
+                          "type": "string",
+                          "enum": [
+                            "SELF",
+                            "SPOUSE",
+                            "SON",
+                            "DAUGHTER",
+                            "FATHER",
+                            "MOTHER",
+                            "BROTHER",
+                            "SISTER",
+                            "GRANDFATHER",
+                            "GRANDMOTHER",
+                            "OTHER"
+                          ],
+                          "example": "SPOUSE"
+                        },
+                        "gender": {
+                          "type": "string",
+                          "nullable": true,
+                          "enum": [
+                            "MALE",
+                            "FEMALE",
+                            "OTHER",
+                            "PREFER_NOT_TO_SAY"
+                          ],
+                          "example": "FEMALE"
+                        },
+                        "date_of_birth": {
+                          "type": "string",
+                          "format": "date",
+                          "example": "1997-05-15"
+                        },
+                        "time_of_birth": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "08:30:00"
+                        },
+                        "birth_place": {
+                          "type": "object",
+                          "properties": {
+                            "place_name": {
+                              "type": "string",
+                              "example": "Ghaziabad"
+                            },
+                            "city": {
+                              "type": "string",
+                              "nullable": true,
+                              "example": "Ghaziabad"
+                            },
+                            "state": {
+                              "type": "string",
+                              "nullable": true,
+                              "example": "Uttar Pradesh"
+                            },
+                            "country": {
+                              "type": "string",
+                              "example": "India"
+                            },
+                            "latitude": {
+                              "type": "number",
+                              "nullable": true,
+                              "example": 28.6692
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "nullable": true,
+                              "example": 77.4538
+                            },
+                            "timezone": {
+                              "type": "string",
+                              "example": "Asia/Kolkata"
+                            }
+                          },
+                          "required": [
+                            "place_name"
+                          ]
+                        },
+                        "is_default": {
+                          "type": "boolean",
+                          "example": false
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-11-26T10:40:00Z"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true,
+                          "example": "2026-11-26T10:40:00Z"
+                        }
+                      }
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {},
+                      "example": []
+                    },
+                    "trace_id": {
+                      "type": "string",
+                      "example": "f3fa65a6-2414-4302-a840-9be1a81169ea"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all family members",
+        "description": "Retrieve all active saved family members for the authenticated customer.",
+        "tags": [
+          "Customer - Family Members"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Family members retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Family members retrieved successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "family_members": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "member_id": {
+                                "type": "integer",
+                                "example": 201
+                              },
+                              "full_name": {
+                                "type": "string",
+                                "example": "Komal Singh"
+                              },
+                              "relationship": {
+                                "type": "string",
+                                "enum": [
+                                  "SELF",
+                                  "SPOUSE",
+                                  "SON",
+                                  "DAUGHTER",
+                                  "FATHER",
+                                  "MOTHER",
+                                  "BROTHER",
+                                  "SISTER",
+                                  "GRANDFATHER",
+                                  "GRANDMOTHER",
+                                  "OTHER"
+                                ],
+                                "example": "SPOUSE"
+                              },
+                              "gender": {
+                                "type": "string",
+                                "nullable": true,
+                                "enum": [
+                                  "MALE",
+                                  "FEMALE",
+                                  "OTHER",
+                                  "PREFER_NOT_TO_SAY"
+                                ],
+                                "example": "FEMALE"
+                              },
+                              "date_of_birth": {
+                                "type": "string",
+                                "format": "date",
+                                "example": "1997-05-15"
+                              },
+                              "time_of_birth": {
+                                "type": "string",
+                                "nullable": true,
+                                "example": "08:30:00"
+                              },
+                              "birth_place": {
+                                "type": "object",
+                                "properties": {
+                                  "place_name": {
+                                    "type": "string",
+                                    "example": "Ghaziabad"
+                                  },
+                                  "city": {
+                                    "type": "string",
+                                    "nullable": true,
+                                    "example": "Ghaziabad"
+                                  },
+                                  "state": {
+                                    "type": "string",
+                                    "nullable": true,
+                                    "example": "Uttar Pradesh"
+                                  },
+                                  "country": {
+                                    "type": "string",
+                                    "example": "India"
+                                  },
+                                  "latitude": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "example": 28.6692
+                                  },
+                                  "longitude": {
+                                    "type": "number",
+                                    "nullable": true,
+                                    "example": 77.4538
+                                  },
+                                  "timezone": {
+                                    "type": "string",
+                                    "example": "Asia/Kolkata"
+                                  }
+                                },
+                                "required": [
+                                  "place_name"
+                                ]
+                              },
+                              "is_default": {
+                                "type": "boolean",
+                                "example": false
+                              },
+                              "created_at": {
+                                "type": "string",
+                                "format": "date-time",
+                                "example": "2026-11-26T10:40:00Z"
+                              },
+                              "updated_at": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true,
+                                "example": "2026-11-26T10:40:00Z"
+                              }
+                            }
+                          }
+                        },
+                        "total_members": {
+                          "type": "integer",
+                          "example": 2
+                        }
+                      }
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {},
+                      "example": []
+                    },
+                    "trace_id": {
+                      "type": "string",
+                      "example": "f3fa65a6-2414-4302-a840-9be1a81169ea"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customer/family-members/{member_id}": {
+      "get": {
+        "summary": "Get member details",
+        "description": "Retrieve details of a single family member by ID.",
+        "tags": [
+          "Customer - Family Members"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "member_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the family member"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Family member retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Family member retrieved successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "member_id": {
+                          "type": "integer",
+                          "example": 201
+                        },
+                        "full_name": {
+                          "type": "string",
+                          "example": "Komal Singh"
+                        },
+                        "relationship": {
+                          "type": "string",
+                          "enum": [
+                            "SELF",
+                            "SPOUSE",
+                            "SON",
+                            "DAUGHTER",
+                            "FATHER",
+                            "MOTHER",
+                            "BROTHER",
+                            "SISTER",
+                            "GRANDFATHER",
+                            "GRANDMOTHER",
+                            "OTHER"
+                          ],
+                          "example": "SPOUSE"
+                        },
+                        "gender": {
+                          "type": "string",
+                          "nullable": true,
+                          "enum": [
+                            "MALE",
+                            "FEMALE",
+                            "OTHER",
+                            "PREFER_NOT_TO_SAY"
+                          ],
+                          "example": "FEMALE"
+                        },
+                        "date_of_birth": {
+                          "type": "string",
+                          "format": "date",
+                          "example": "1997-05-15"
+                        },
+                        "time_of_birth": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "08:30:00"
+                        },
+                        "birth_place": {
+                          "type": "object",
+                          "properties": {
+                            "place_name": {
+                              "type": "string",
+                              "example": "Ghaziabad"
+                            },
+                            "city": {
+                              "type": "string",
+                              "nullable": true,
+                              "example": "Ghaziabad"
+                            },
+                            "state": {
+                              "type": "string",
+                              "nullable": true,
+                              "example": "Uttar Pradesh"
+                            },
+                            "country": {
+                              "type": "string",
+                              "example": "India"
+                            },
+                            "latitude": {
+                              "type": "number",
+                              "nullable": true,
+                              "example": 28.6692
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "nullable": true,
+                              "example": 77.4538
+                            },
+                            "timezone": {
+                              "type": "string",
+                              "example": "Asia/Kolkata"
+                            }
+                          },
+                          "required": [
+                            "place_name"
+                          ]
+                        },
+                        "is_default": {
+                          "type": "boolean",
+                          "example": false
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-11-26T10:40:00Z"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true,
+                          "example": "2026-11-26T10:40:00Z"
+                        }
+                      }
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {},
+                      "example": []
+                    },
+                    "trace_id": {
+                      "type": "string",
+                      "example": "f3fa65a6-2414-4302-a840-9be1a81169ea"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update member",
+        "description": "Update an existing family member details.",
+        "tags": [
+          "Customer - Family Members"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "member_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the family member"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "full_name": {
+                    "type": "string",
+                    "example": "Komal Singh"
+                  },
+                  "relationship": {
+                    "type": "string",
+                    "enum": [
+                      "SELF",
+                      "SPOUSE",
+                      "SON",
+                      "DAUGHTER",
+                      "FATHER",
+                      "MOTHER",
+                      "BROTHER",
+                      "SISTER",
+                      "GRANDFATHER",
+                      "GRANDMOTHER",
+                      "OTHER"
+                    ],
+                    "example": "SPOUSE"
+                  },
+                  "gender": {
+                    "type": "string",
+                    "enum": [
+                      "MALE",
+                      "FEMALE",
+                      "OTHER",
+                      "PREFER_NOT_TO_SAY"
+                    ],
+                    "example": "FEMALE"
+                  },
+                  "date_of_birth": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "1997-05-15"
+                  },
+                  "time_of_birth": {
+                    "type": "string",
+                    "example": "08:30:00"
+                  },
+                  "birth_place": {
+                    "type": "object",
+                    "properties": {
+                      "place_name": {
+                        "type": "string",
+                        "example": "Ghaziabad"
+                      },
+                      "city": {
+                        "type": "string",
+                        "nullable": true,
+                        "example": "Ghaziabad"
+                      },
+                      "state": {
+                        "type": "string",
+                        "nullable": true,
+                        "example": "Uttar Pradesh"
+                      },
+                      "country": {
+                        "type": "string",
+                        "example": "India"
+                      },
+                      "latitude": {
+                        "type": "number",
+                        "nullable": true,
+                        "example": 28.6692
+                      },
+                      "longitude": {
+                        "type": "number",
+                        "nullable": true,
+                        "example": 77.4538
+                      },
+                      "timezone": {
+                        "type": "string",
+                        "example": "Asia/Kolkata"
+                      }
+                    },
+                    "required": [
+                      "place_name"
+                    ]
+                  },
+                  "is_default": {
+                    "type": "boolean",
+                    "example": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Family member updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Family member updated successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "member_id": {
+                          "type": "integer",
+                          "example": 201
+                        },
+                        "full_name": {
+                          "type": "string",
+                          "example": "Komal Singh"
+                        },
+                        "relationship": {
+                          "type": "string",
+                          "enum": [
+                            "SELF",
+                            "SPOUSE",
+                            "SON",
+                            "DAUGHTER",
+                            "FATHER",
+                            "MOTHER",
+                            "BROTHER",
+                            "SISTER",
+                            "GRANDFATHER",
+                            "GRANDMOTHER",
+                            "OTHER"
+                          ],
+                          "example": "SPOUSE"
+                        },
+                        "gender": {
+                          "type": "string",
+                          "nullable": true,
+                          "enum": [
+                            "MALE",
+                            "FEMALE",
+                            "OTHER",
+                            "PREFER_NOT_TO_SAY"
+                          ],
+                          "example": "FEMALE"
+                        },
+                        "date_of_birth": {
+                          "type": "string",
+                          "format": "date",
+                          "example": "1997-05-15"
+                        },
+                        "time_of_birth": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "08:30:00"
+                        },
+                        "birth_place": {
+                          "type": "object",
+                          "properties": {
+                            "place_name": {
+                              "type": "string",
+                              "example": "Ghaziabad"
+                            },
+                            "city": {
+                              "type": "string",
+                              "nullable": true,
+                              "example": "Ghaziabad"
+                            },
+                            "state": {
+                              "type": "string",
+                              "nullable": true,
+                              "example": "Uttar Pradesh"
+                            },
+                            "country": {
+                              "type": "string",
+                              "example": "India"
+                            },
+                            "latitude": {
+                              "type": "number",
+                              "nullable": true,
+                              "example": 28.6692
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "nullable": true,
+                              "example": 77.4538
+                            },
+                            "timezone": {
+                              "type": "string",
+                              "example": "Asia/Kolkata"
+                            }
+                          },
+                          "required": [
+                            "place_name"
+                          ]
+                        },
+                        "is_default": {
+                          "type": "boolean",
+                          "example": false
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-11-26T10:40:00Z"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true,
+                          "example": "2026-11-26T10:40:00Z"
+                        }
+                      }
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {},
+                      "example": []
+                    },
+                    "trace_id": {
+                      "type": "string",
+                      "example": "f3fa65a6-2414-4302-a840-9be1a81169ea"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete member",
+        "description": "Soft delete a family member from the customer profile.",
+        "tags": [
+          "Customer - Family Members"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "member_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the family member"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Family member deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Family member deleted successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "member_id": {
+                          "type": "integer",
+                          "example": 201
+                        },
+                        "is_deleted": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "deleted_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-11-26T11:00:00Z"
+                        }
+                      }
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {},
+                      "example": []
+                    },
+                    "trace_id": {
+                      "type": "string",
+                      "example": "f3fa65a6-2414-4302-a840-9be1a81169ea"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customer/astrologers/{astrologer_id}/follow": {
+      "post": {
+        "summary": "Follow astrologer",
+        "description": "Allow customer to follow an astrologer. Idempotent action. Only active/approved astrologers can be followed.",
+        "tags": [
+          "Customer - Astrologer Follow"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "astrologer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the astrologer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Astrologer followed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Astrologer followed successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "follow_id": {
+                          "type": "integer",
+                          "example": 101
+                        },
+                        "astrologer_id": {
+                          "type": "integer",
+                          "example": 5
+                        },
+                        "is_following": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "followed_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-11-26T10:30:00Z"
+                        }
+                      }
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {},
+                      "example": []
+                    },
+                    "trace_id": {
+                      "type": "string",
+                      "example": "f3fa65a6-2414-4302-a840-9be1a81169ea"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unfollow astrologer",
+        "description": "Unfollow an astrologer. Deactivates the follow relationship idempotently.",
+        "tags": [
+          "Customer - Astrologer Follow"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "astrologer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the astrologer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Astrologer unfollowed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Astrologer unfollowed successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "astrologer_id": {
+                          "type": "integer",
+                          "example": 5
+                        },
+                        "is_following": {
+                          "type": "boolean",
+                          "example": false
+                        },
+                        "unfollowed_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-11-26T10:35:00Z"
+                        }
+                      }
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {},
+                      "example": []
+                    },
+                    "trace_id": {
+                      "type": "string",
+                      "example": "f3fa65a6-2414-4302-a840-9be1a81169ea"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customer/astrologers/following": {
+      "get": {
+        "summary": "Get followed astrologers",
+        "description": "Retrieve paginated list of astrologers followed by the authenticated customer.",
+        "tags": [
+          "Customer - Astrologer Follow"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "Number of items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Followed astrologers retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Followed astrologers retrieved successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "astrologers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "follow_id": {
+                                "type": "integer",
+                                "example": 101
+                              },
+                              "astrologer_id": {
+                                "type": "integer",
+                                "example": 5
+                              },
+                              "display_name": {
+                                "type": "string",
+                                "example": "Meera Tarot Reader"
+                              },
+                              "profile_image": {
+                                "type": "string",
+                                "nullable": true,
+                                "example": "https://cdn.dharma.com/astrologers/10.jpg"
+                              },
+                              "experience_years": {
+                                "type": "integer",
+                                "example": 7
+                              },
+                              "avg_rating": {
+                                "type": "number",
+                                "example": 4.92
+                              },
+                              "total_reviews": {
+                                "type": "integer",
+                                "example": 980
+                              },
+                              "availability": {
+                                "type": "object",
+                                "properties": {
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ONLINE",
+                                      "BUSY",
+                                      "OFFLINE"
+                                    ],
+                                    "example": "ONLINE"
+                                  },
+                                  "is_available": {
+                                    "type": "boolean",
+                                    "example": true
+                                  }
+                                }
+                              },
+                              "profile_badges": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "code": {
+                                      "type": "string",
+                                      "example": "TOP_RATED"
+                                    },
+                                    "label": {
+                                      "type": "string",
+                                      "example": "Top Rated"
+                                    }
+                                  }
+                                }
+                              },
+                              "followed_at": {
+                                "type": "string",
+                                "format": "date-time",
+                                "example": "2026-11-26T10:30:00Z"
+                              }
+                            }
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "page": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "limit": {
+                              "type": "integer",
+                              "example": 10
+                            },
+                            "total_pages": {
+                              "type": "integer",
+                              "example": 1
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {},
+                      "example": []
+                    },
+                    "trace_id": {
+                      "type": "string",
+                      "example": "f3fa65a6-2414-4302-a840-9be1a81169ea"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "tags": [

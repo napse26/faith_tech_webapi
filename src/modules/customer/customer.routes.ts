@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import { customerController } from './customer.controller';
+import { customerFamilyController } from './customer-family.controller';
 import { authenticate } from '../../common/middleware/auth.middleware';
 import { validate } from '../../common/middleware/validate';
+import {
+  addFamilyMemberSchema,
+  updateFamilyMemberSchema,
+  getFollowingQuerySchema
+} from './customer-family.schemas';
 import {
   updateCustomerProfileSchema,
   createBirthProfileSchema,
@@ -156,5 +162,20 @@ router.get('/recent-astrologers', customerController.listRecentAstrologers);
 // =========================================================================
 router.get('/activity', customerController.getCustomerActivity);
 
+// =========================================================================
+// 14. FAMILY MEMBERS (Spec)
+// =========================================================================
+router.post('/family-members', validate({ body: addFamilyMemberSchema }), customerFamilyController.addFamilyMember);
+router.get('/family-members', customerFamilyController.getFamilyMembers);
+router.get('/family-members/:member_id', customerFamilyController.getFamilyMemberById);
+router.put('/family-members/:member_id', validate({ body: updateFamilyMemberSchema }), customerFamilyController.updateFamilyMember);
+router.delete('/family-members/:member_id', customerFamilyController.deleteFamilyMember);
+
+// =========================================================================
+// 15. ASTROLOGER FOLLOW / UNFOLLOW (Spec)
+// =========================================================================
+router.post('/astrologers/:astrologer_id/follow', customerFamilyController.followAstrologer);
+router.delete('/astrologers/:astrologer_id/follow', customerFamilyController.unfollowAstrologer);
+router.get('/astrologers/following', validate({ query: getFollowingQuerySchema }), customerFamilyController.getFollowedAstrologers);
 
 export const customerRoutes = router;

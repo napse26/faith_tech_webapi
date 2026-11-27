@@ -21,6 +21,7 @@ const profile_routes_1 = require("./modules/profiles/profile.routes");
 const birth_details_routes_1 = require("./modules/birth-details/birth-details.routes");
 const user_routes_1 = require("./modules/users/user.routes");
 const customer_routes_1 = require("./modules/customer/customer.routes");
+const customer_feature_routes_1 = require("./modules/customer/customer-feature.routes");
 const astrologer_routes_1 = require("./modules/astrologers/astrologer.routes");
 const admin_astrologer_routes_1 = require("./modules/astrologers/admin-astrologer.routes");
 const pooja_routes_1 = require("./modules/poojas/pooja.routes");
@@ -104,6 +105,8 @@ function createApp() {
     app.use('/api', rate_limiter_1.globalLimiter);
     // Mount versioned module routes
     app.use('/api/v1/auth', auth_routes_1.authRoutes);
+    app.use('/api/v1/customer', customer_feature_routes_1.customerV1Router);
+    app.use('/api/v1/customers', customer_feature_routes_1.customerV1Router);
     app.use('/api/v1/customers/me', customer_routes_1.customerRoutes);
     app.use('/api/v1/users', profile_routes_1.profileRoutes);
     app.use('/api/v1/users', birth_details_routes_1.birthDetailsRoutes);
