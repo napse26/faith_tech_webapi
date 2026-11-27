@@ -107,6 +107,18 @@ export const updatePhotoSchema = z.object({
   photoUrl: z.string().url().max(500)
 });
 
+export const uploadGalleryImageSchema = z.object({
+  imageUrl: z.string().url().max(500).optional(),
+  image_url: z.string().url().max(500).optional(),
+  caption: z.string().max(255).optional(),
+  title: z.string().max(150).optional(),
+  displayOrder: z.number().int().min(0).optional(),
+  display_order: z.number().int().min(0).optional()
+}).refine(data => Boolean(data.imageUrl || data.image_url), {
+  message: 'imageUrl or image_url is required',
+  path: ['imageUrl']
+});
+
 // Admin Schemas
 export const adminReviewApplicationSchema = z.object({
   notes: z.string().max(1000).optional()

@@ -17,6 +17,7 @@ import {
   addDateExceptionSchema,
   toggleOnlineStatusSchema,
   updatePhotoSchema,
+  uploadGalleryImageSchema,
   createAstrologerServiceSchema,
   updateAstrologerServiceSchema
 } from './astrologer.schemas';
@@ -29,6 +30,8 @@ const router = Router();
 router.get('/', astrologerController.listPublicAstrologers);
 router.get('/:astrologerId(\\d+)/profile', astrologerController.getPublicProfile);
 router.get('/:astrologerId(\\d+)/availability', astrologerController.getPublicAvailability);
+router.get('/:astrologerId(\\d+)/gallery', astrologerController.getPublicGallery);
+router.get('/:astrologer_id(\\d+)/gallery', astrologerController.getPublicGallery);
 router.get('/:astrologerId/reviews', validate({ query: getAstrologerReviewsQuerySchema }), reviewController.getAstrologerReviews);
 router.get('/:astrologer_id/reviews', validate({ query: getAstrologerReviewsQuerySchema }), reviewController.getAstrologerReviews);
 router.get('/:astrologerId(\\d+)', astrologerController.getPublicProfile);
@@ -51,6 +54,12 @@ router.get('/profile', astrologerController.getProfile);
 router.patch('/profile', validate({ body: updateAstrologerProfileSchema }), astrologerController.updateProfile);
 router.post('/profile/photo', validate({ body: updatePhotoSchema }), astrologerController.updatePhoto);
 router.delete('/profile/photo', astrologerController.deletePhoto);
+
+// Gallery
+router.get('/gallery', astrologerController.getMyGallery);
+router.post('/gallery', validate({ body: uploadGalleryImageSchema }), astrologerController.uploadGalleryImage);
+router.post('/gallery/upload', validate({ body: uploadGalleryImageSchema }), astrologerController.uploadGalleryImage);
+router.delete('/gallery/:imageId', astrologerController.deleteGalleryImage);
 
 // Expertise & Services & Pricing
 router.get('/expertise', astrologerController.getExpertise);

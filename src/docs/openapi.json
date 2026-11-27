@@ -2286,6 +2286,36 @@
         }
       }
     },
+    "/api/v1/astrologers/{astrologerId}/gallery": {
+      "get": {
+        "tags": [
+          "Astrologer Discovery (Public)"
+        ],
+        "summary": "Get public astrologer gallery images",
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of astrologer gallery images",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/astrologers/apply": {
       "post": {
         "tags": [
@@ -2695,6 +2725,117 @@
         "responses": {
           "200": {
             "description": "Photo removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/gallery": {
+      "get": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Get own astrologer gallery images",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gallery images",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Upload gallery image",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "imageUrl"
+                ],
+                "properties": {
+                  "imageUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "caption": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "displayOrder": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Gallery image uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astrologers/gallery/{imageId}": {
+      "delete": {
+        "tags": [
+          "Astrologer Profile & Operations"
+        ],
+        "summary": "Delete gallery image",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "imageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gallery image deleted",
             "content": {
               "application/json": {
                 "schema": {

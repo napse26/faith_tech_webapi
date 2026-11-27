@@ -154,3 +154,12 @@ export interface AstrologerFilterQuery {
   isFeatured?: boolean;
   isRecommended?: boolean;
 }
+
+export interface UploadGalleryImageDto {
+  imageUrl?: string;
+  image_url?: string;
+  caption?: string;
+  title?: string;
+  displayOrder?: number;
+  display_order?: number;
+}

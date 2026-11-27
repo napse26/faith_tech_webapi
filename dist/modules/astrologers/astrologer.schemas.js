@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateAstrologerServiceSchema = exports.createAstrologerServiceSchema = exports.adminVerifyDocumentSchema = exports.adminSuspendAstrologerSchema = exports.adminRejectApplicationSchema = exports.adminApproveApplicationSchema = exports.adminRequestChangesSchema = exports.adminReviewApplicationSchema = exports.updatePhotoSchema = exports.toggleOnlineStatusSchema = exports.addDateExceptionSchema = exports.setWeeklyAvailabilitySchema = exports.weeklySlotItemSchema = exports.updatePayoutDetailsSchema = exports.uploadDocumentSchema = exports.updateQualificationSchema = exports.addQualificationSchema = exports.updateAstrologerPricingSchema = exports.updateExpertiseSchema = exports.updateAstrologerProfileSchema = exports.applyAstrologerSchema = void 0;
+exports.updateAstrologerServiceSchema = exports.createAstrologerServiceSchema = exports.adminVerifyDocumentSchema = exports.adminSuspendAstrologerSchema = exports.adminRejectApplicationSchema = exports.adminApproveApplicationSchema = exports.adminRequestChangesSchema = exports.adminReviewApplicationSchema = exports.uploadGalleryImageSchema = exports.updatePhotoSchema = exports.toggleOnlineStatusSchema = exports.addDateExceptionSchema = exports.setWeeklyAvailabilitySchema = exports.weeklySlotItemSchema = exports.updatePayoutDetailsSchema = exports.uploadDocumentSchema = exports.updateQualificationSchema = exports.addQualificationSchema = exports.updateAstrologerPricingSchema = exports.updateExpertiseSchema = exports.updateAstrologerProfileSchema = exports.applyAstrologerSchema = void 0;
 const zod_1 = require("zod");
 exports.applyAstrologerSchema = zod_1.z.object({
     displayName: zod_1.z.string().min(2).max(200),
@@ -95,6 +95,17 @@ exports.toggleOnlineStatusSchema = zod_1.z.object({
 exports.updatePhotoSchema = zod_1.z.object({
     photoType: zod_1.z.enum(['PROFILE', 'COVER']),
     photoUrl: zod_1.z.string().url().max(500)
+});
+exports.uploadGalleryImageSchema = zod_1.z.object({
+    imageUrl: zod_1.z.string().url().max(500).optional(),
+    image_url: zod_1.z.string().url().max(500).optional(),
+    caption: zod_1.z.string().max(255).optional(),
+    title: zod_1.z.string().max(150).optional(),
+    displayOrder: zod_1.z.number().int().min(0).optional(),
+    display_order: zod_1.z.number().int().min(0).optional()
+}).refine(data => Boolean(data.imageUrl || data.image_url), {
+    message: 'imageUrl or image_url is required',
+    path: ['imageUrl']
 });
 // Admin Schemas
 exports.adminReviewApplicationSchema = zod_1.z.object({

@@ -396,6 +396,49 @@ class AstrologerController {
             next(error);
         }
     }
+    async getPublicGallery(req, res, next) {
+        try {
+            const rawId = req.params.astrologerId || req.params.astrologer_id;
+            const idStr = Array.isArray(rawId) ? rawId[0] : (rawId ? String(rawId) : '');
+            if (!idStr || isNaN(Number(idStr))) {
+                throw new app_error_1.BadRequestError('Invalid astrologer ID', 'INVALID_ASTROLOGER_ID');
+            }
+            const astrologerId = BigInt(idStr);
+            const result = await astrologer_service_1.astrologerService.getPublicGallery(astrologerId);
+            res.status(200).json((0, api_response_1.createSuccessResponse)(result, 'Astrologer gallery images retrieved successfully', req.traceId));
+        }
+        catch (error) {
+            next(error);
+        }
+    }
+    async getMyGallery(req, res, next) {
+        try {
+            const result = await astrologer_service_1.astrologerService.getMyGallery(req.user.userId);
+            res.status(200).json((0, api_response_1.createSuccessResponse)(result, 'Gallery images retrieved successfully', req.traceId));
+        }
+        catch (error) {
+            next(error);
+        }
+    }
+    async uploadGalleryImage(req, res, next) {
+        try {
+            const result = await astrologer_service_1.astrologerService.uploadGalleryImage(req.user.userId, req.body);
+            res.status(201).json((0, api_response_1.createSuccessResponse)(result, 'Gallery image uploaded successfully', req.traceId));
+        }
+        catch (error) {
+            next(error);
+        }
+    }
+    async deleteGalleryImage(req, res, next) {
+        try {
+            const imageId = BigInt(req.params.imageId);
+            const result = await astrologer_service_1.astrologerService.deleteGalleryImage(req.user.userId, imageId);
+            res.status(200).json((0, api_response_1.createSuccessResponse)(result, 'Gallery image deleted successfully', req.traceId));
+        }
+        catch (error) {
+            next(error);
+        }
+    }
 }
 exports.AstrologerController = AstrologerController;
 exports.astrologerController = new AstrologerController();

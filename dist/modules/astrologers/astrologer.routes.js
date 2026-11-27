@@ -15,6 +15,8 @@ const router = (0, express_1.Router)();
 router.get('/', astrologer_controller_1.astrologerController.listPublicAstrologers);
 router.get('/:astrologerId(\\d+)/profile', astrologer_controller_1.astrologerController.getPublicProfile);
 router.get('/:astrologerId(\\d+)/availability', astrologer_controller_1.astrologerController.getPublicAvailability);
+router.get('/:astrologerId(\\d+)/gallery', astrologer_controller_1.astrologerController.getPublicGallery);
+router.get('/:astrologer_id(\\d+)/gallery', astrologer_controller_1.astrologerController.getPublicGallery);
 router.get('/:astrologerId/reviews', (0, validate_1.validate)({ query: review_schemas_1.getAstrologerReviewsQuerySchema }), review_controller_1.reviewController.getAstrologerReviews);
 router.get('/:astrologer_id/reviews', (0, validate_1.validate)({ query: review_schemas_1.getAstrologerReviewsQuerySchema }), review_controller_1.reviewController.getAstrologerReviews);
 router.get('/:astrologerId(\\d+)', astrologer_controller_1.astrologerController.getPublicProfile);
@@ -34,6 +36,11 @@ router.get('/profile', astrologer_controller_1.astrologerController.getProfile);
 router.patch('/profile', (0, validate_1.validate)({ body: astrologer_schemas_1.updateAstrologerProfileSchema }), astrologer_controller_1.astrologerController.updateProfile);
 router.post('/profile/photo', (0, validate_1.validate)({ body: astrologer_schemas_1.updatePhotoSchema }), astrologer_controller_1.astrologerController.updatePhoto);
 router.delete('/profile/photo', astrologer_controller_1.astrologerController.deletePhoto);
+// Gallery
+router.get('/gallery', astrologer_controller_1.astrologerController.getMyGallery);
+router.post('/gallery', (0, validate_1.validate)({ body: astrologer_schemas_1.uploadGalleryImageSchema }), astrologer_controller_1.astrologerController.uploadGalleryImage);
+router.post('/gallery/upload', (0, validate_1.validate)({ body: astrologer_schemas_1.uploadGalleryImageSchema }), astrologer_controller_1.astrologerController.uploadGalleryImage);
+router.delete('/gallery/:imageId', astrologer_controller_1.astrologerController.deleteGalleryImage);
 // Expertise & Services & Pricing
 router.get('/expertise', astrologer_controller_1.astrologerController.getExpertise);
 router.put('/expertise', (0, validate_1.validate)({ body: astrologer_schemas_1.updateExpertiseSchema }), astrologer_controller_1.astrologerController.updateExpertise);

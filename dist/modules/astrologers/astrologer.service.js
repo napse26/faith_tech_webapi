@@ -332,6 +332,76 @@ class AstrologerService {
             message: `${photoType} photo deleted successfully`
         };
     }
+    // Gallery Management (Astrologer Self)
+    async getMyGallery(userId) {
+        const astro = await this.getAstrologerByUserId(userId);
+        const images = await database_1.prisma.astrologer_gallery.findMany({
+            where: { astrologer_id: astro.astrologer_id },
+            orderBy: [
+                { display_order: 'asc' },
+                { created_at: 'desc' }
+            ]
+        });
+        return {
+            astrologer_id: Number(astro.astrologer_id),
+            total_images: images.length,
+            images: images.map(img => ({
+                id: Number(img.id),
+                image_url: img.image_url,
+                caption: img.caption ?? null,
+                title: img.title ?? null,
+                display_order: img.display_order ?? 0,
+                is_active: img.is_active ?? true,
+                created_at: img.created_at
+            }))
+        };
+    }
+    async uploadGalleryImage(userId, dto) {
+        const astro = await this.getAstrologerByUserId(userId);
+        const imageUrl = dto.imageUrl || dto.image_url;
+        if (!imageUrl) {
+            throw new app_error_1.BadRequestError('Image URL is required', 'IMAGE_URL_REQUIRED');
+        }
+        const created = await database_1.prisma.astrologer_gallery.create({
+            data: {
+                astrologer_id: astro.astrologer_id,
+                image_url: imageUrl,
+                caption: dto.caption || null,
+                title: dto.title || null,
+                display_order: dto.displayOrder ?? dto.display_order ?? 0,
+                is_active: true
+            }
+        });
+        return {
+            id: Number(created.id),
+            astrologer_id: Number(created.astrologer_id),
+            image_url: created.image_url,
+            caption: created.caption ?? null,
+            title: created.title ?? null,
+            display_order: created.display_order ?? 0,
+            is_active: created.is_active ?? true,
+            created_at: created.created_at
+        };
+    }
+    async deleteGalleryImage(userId, imageId) {
+        const astro = await this.getAstrologerByUserId(userId);
+        const image = await database_1.prisma.astrologer_gallery.findFirst({
+            where: {
+                id: imageId,
+                astrologer_id: astro.astrologer_id
+            }
+        });
+        if (!image) {
+            throw new app_error_1.NotFoundError('Gallery image not found', 'IMAGE_NOT_FOUND');
+        }
+        await database_1.prisma.astrologer_gallery.delete({
+            where: { id: imageId }
+        });
+        return {
+            id: Number(imageId),
+            message: 'Gallery image deleted successfully'
+        };
+    }
     // 3. EXPERTISE & SERVICES & PRICING
     async getExpertise(userId) {
         const astro = await this.getAstrologerByUserId(userId);
@@ -1143,6 +1213,39 @@ class AstrologerService {
             timezone: astro.timezone,
             weeklySlots: slots,
             upcomingExceptions: exceptions
+        };
+    }
+    async getPublicGallery(astrologerId) {
+        const astro = await database_1.prisma.astrologers.findFirst({
+            where: {
+                astrologer_id: astrologerId,
+                onboarding_status: 'APPROVED'
+            }
+        });
+        if (!astro) {
+            throw new app_error_1.NotFoundError('Astrologer not found or not approved', 'ASTROLOGER_NOT_FOUND');
+        }
+        const images = await database_1.prisma.astrologer_gallery.findMany({
+            where: {
+                astrologer_id: astrologerId,
+                is_active: true
+            },
+            orderBy: [
+                { display_order: 'asc' },
+                { created_at: 'desc' }
+            ]
+        });
+        return {
+            astrologer_id: Number(astrologerId),
+            total_images: images.length,
+            images: images.map(img => ({
+                id: Number(img.id),
+                image_url: img.image_url,
+                caption: img.caption ?? null,
+                title: img.title ?? null,
+                display_order: img.display_order ?? 0,
+                created_at: img.created_at
+            }))
         };
     }
     // 10. ADMIN LIFECYCLE MANAGEMENT

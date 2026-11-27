@@ -481,6 +481,57 @@ export class AstrologerController {
       next(error);
     }
   }
+
+  async getPublicGallery(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const rawId = req.params.astrologerId || req.params.astrologer_id;
+      const idStr = Array.isArray(rawId) ? rawId[0] : (rawId ? String(rawId) : '');
+      if (!idStr || isNaN(Number(idStr))) {
+        throw new BadRequestError('Invalid astrologer ID', 'INVALID_ASTROLOGER_ID');
+      }
+      const astrologerId = BigInt(idStr);
+      const result = await astrologerService.getPublicGallery(astrologerId);
+      res.status(200).json(
+        createSuccessResponse(result, 'Astrologer gallery images retrieved successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getMyGallery(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await astrologerService.getMyGallery(req.user!.userId);
+      res.status(200).json(
+        createSuccessResponse(result, 'Gallery images retrieved successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async uploadGalleryImage(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await astrologerService.uploadGalleryImage(req.user!.userId, req.body);
+      res.status(201).json(
+        createSuccessResponse(result, 'Gallery image uploaded successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteGalleryImage(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const imageId = BigInt(req.params.imageId as string);
+      const result = await astrologerService.deleteGalleryImage(req.user!.userId, imageId);
+      res.status(200).json(
+        createSuccessResponse(result, 'Gallery image deleted successfully', req.traceId)
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const astrologerController = new AstrologerController();
