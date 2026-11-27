@@ -83,13 +83,6 @@ export interface AddCheckoutFamilyMemberDto {
   rashi?: string;
 }
 
-export interface SubmitPoojaReviewDto {
-  rating: number; // 1 - 5
-  reviewText: string;
-  reviewerName?: string;
-  reviewerCity?: string;
-}
-
 export interface PoojaProcessStep {
   stepNumber: number;
   title: string;

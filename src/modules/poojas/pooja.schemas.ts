@@ -47,13 +47,6 @@ export const addCheckoutFamilyMemberSchema = z.object({
   rashi: z.string().max(50).optional()
 });
 
-export const submitPoojaReviewSchema = z.object({
-  rating: z.number().min(1).max(5),
-  reviewText: z.string().min(5).max(1000),
-  reviewerName: z.string().min(2).max(150).optional(),
-  reviewerCity: z.string().max(100).optional()
-});
-
 export const createBookingSchema = z.object({
   quoteId: z.string().uuid(),
   customerAddress: z.string().max(500).optional()

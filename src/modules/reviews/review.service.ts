@@ -331,50 +331,10 @@ export class ReviewService {
       review_status: 'APPROVED'
     };
 
-    let allApproved = await prisma.common_reviews.findMany({
+    const allApproved = await prisma.common_reviews.findMany({
       where: whereClause,
       select: { rating: true }
     });
-
-    // If no reviews yet in common_reviews, check legacy pooja_reviews and populate
-    if (allApproved.length === 0) {
-      const legacyReviews = await prisma.pooja_reviews.findMany({
-        where: { pooja_id: pooja.pooja_id }
-      });
-
-      if (legacyReviews.length > 0) {
-        // Migrate them into common_reviews
-        for (const lr of legacyReviews) {
-          try {
-            await prisma.common_reviews.create({
-              data: {
-                review_id: lr.review_id,
-                customer_id: lr.user_id || BigInt(1),
-                review_type: 'POOJA',
-                pooja_id: pooja.pooja_id,
-                booking_id: 'LEGACY-' + lr.review_id,
-                rating: Math.round(Number(lr.rating) || 5),
-                review_text: lr.review_text,
-                reviewer_name: lr.reviewer_name,
-                reviewer_city: lr.reviewer_city,
-                is_anonymous: false,
-                is_verified_purchase: lr.is_verified_seva ?? true,
-                review_status: 'APPROVED',
-                created_at: lr.created_at || new Date(),
-                updated_at: lr.created_at || new Date()
-              }
-            });
-          } catch {
-            // ignore duplicate key if any
-          }
-        }
-
-        allApproved = await prisma.common_reviews.findMany({
-          where: whereClause,
-          select: { rating: true }
-        });
-      }
-    }
 
     const total = allApproved.length;
     const ratingSummary: RatingSummary = { '5': 0, '4': 0, '3': 0, '2': 0, '1': 0 };

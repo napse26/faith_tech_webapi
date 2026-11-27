@@ -312,30 +312,6 @@ export class PoojaController {
   // 5. DEVOTEE REVIEWS & CHECKOUT CONTEXT
   // =========================================================================
 
-  async getPoojaReviews(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
-      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
-      const reviews = await poojaService.getPoojaReviews(req.params.poojaIdOrSlug as string, page, limit);
-      res.status(200).json(
-        createSuccessResponse(reviews, 'Pooja devotee reviews retrieved successfully', req.traceId)
-      );
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async submitPoojaReview(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const review = await poojaService.submitPoojaReview(req.user!.userId, req.params.poojaId as string, req.body);
-      res.status(201).json(
-        createSuccessResponse(review, review.message, req.traceId)
-      );
-    } catch (error) {
-      next(error);
-    }
-  }
-
   async getCheckoutContext(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const context = await poojaService.getCheckoutContext(req.user!.userId, req.params.poojaId as string);

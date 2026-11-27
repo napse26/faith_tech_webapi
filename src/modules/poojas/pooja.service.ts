@@ -8,7 +8,6 @@ import {
   SimulatePaymentDto,
   BookingFeedbackDto,
   AddCheckoutFamilyMemberDto,
-  SubmitPoojaReviewDto,
   CreatePoojaDto,
   UpdatePoojaDto,
   CreatePoojaPackageDto,
@@ -239,7 +238,8 @@ export class PoojaService {
           orderBy: [{ slot_date: 'asc' }, { start_time: 'asc' }],
           take: 5
         },
-        pooja_reviews: {
+        common_reviews: {
+          where: { review_type: 'POOJA', review_status: 'APPROVED' },
           orderBy: { created_at: 'desc' },
           take: 3
         }
@@ -468,117 +468,17 @@ export class PoojaService {
         price: Number(a.price),
         maxQuantity: a.max_quantity ?? 10
       })),
-      reviews: pooja.pooja_reviews.map(r => ({
+      reviews: pooja.common_reviews.map(r => ({
         reviewId: r.review_id,
-        reviewerName: r.reviewer_name,
-        reviewerCity: r.reviewer_city || 'Varanasi',
+        reviewerName: r.is_anonymous ? 'Anonymous Devotee' : (r.reviewer_name || 'Devotee'),
+        reviewerCity: r.is_anonymous ? null : (r.reviewer_city || 'Varanasi'),
         rating: Number(r.rating),
         reviewText: r.review_text,
-        isVerifiedSeva: r.is_verified_seva ?? true,
+        isVerifiedSeva: r.is_verified_purchase ?? true,
         date: r.created_at ? r.created_at.toISOString().split('T')[0] : 'Recently'
       })),
       startingPrice,
       participateNowLink: `/api/v1/poojas/${pooja.slug}`
-    };
-  }
-
-  async getPoojaReviews(idOrSlug: string, page = 1, limit = 10) {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
-    const pooja = await prisma.poojas.findFirst({
-      where: isUuid ? { pooja_id: idOrSlug } : { slug: idOrSlug },
-      select: { pooja_id: true, title: true, rating: true, total_reviews: true }
-    });
-
-    if (!pooja) {
-      throw new NotFoundError('Pooja not found', 'POOJA_NOT_FOUND');
-    }
-
-    const skip = (page - 1) * limit;
-    const [total, reviewsList] = await Promise.all([
-      prisma.pooja_reviews.count({ where: { pooja_id: pooja.pooja_id } }),
-      prisma.pooja_reviews.findMany({
-        where: { pooja_id: pooja.pooja_id },
-        skip,
-        take: limit,
-        orderBy: { created_at: 'desc' }
-      })
-    ]);
-
-    return {
-      poojaId: pooja.pooja_id,
-      poojaTitle: pooja.title,
-      overallRating: Number(pooja.rating ?? 4.90),
-      totalReviews: total || (pooja.total_reviews ?? 0),
-      ratingDistribution: {
-        '5': 92,
-        '4': 8,
-        '3': 0,
-        '2': 0,
-        '1': 0
-      },
-      reviews: reviewsList.map(r => ({
-        reviewId: r.review_id,
-        reviewerName: r.reviewer_name,
-        reviewerCity: r.reviewer_city,
-        rating: Number(r.rating),
-        reviewText: r.review_text,
-        isVerifiedSeva: r.is_verified_seva,
-        date: r.created_at ? r.created_at.toISOString().split('T')[0] : null
-      })),
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit)
-      }
-    };
-  }
-
-  async submitPoojaReview(userId: bigint, poojaId: string, dto: SubmitPoojaReviewDto) {
-    const pooja = await prisma.poojas.findUnique({
-      where: { pooja_id: poojaId }
-    });
-
-    if (!pooja) {
-      throw new NotFoundError('Pooja not found', 'POOJA_NOT_FOUND');
-    }
-
-    const user = await prisma.users.findUnique({
-      where: { user_id: userId },
-      select: { full_name: true }
-    });
-
-    const reviewerName = dto.reviewerName || user?.full_name || 'Devotee';
-
-    const review = await prisma.pooja_reviews.create({
-      data: {
-        pooja_id: poojaId,
-        user_id: userId,
-        reviewer_name: reviewerName,
-        reviewer_city: dto.reviewerCity || 'New Delhi',
-        rating: dto.rating,
-        review_text: dto.reviewText,
-        is_verified_seva: true
-      }
-    });
-
-    // Update total reviews count on poojas
-    await prisma.poojas.update({
-      where: { pooja_id: poojaId },
-      data: {
-        total_reviews: {
-          increment: 1
-        }
-      }
-    });
-
-    return {
-      reviewId: review.review_id,
-      poojaId,
-      reviewerName: review.reviewer_name,
-      rating: Number(review.rating),
-      reviewText: review.review_text,
-      message: 'Review submitted successfully. Thank you for sharing your divine experience!'
     };
   }
 

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminProcessRefundSchema = exports.adminSetLiveSessionSchema = exports.adminUpdateBookingStatusSchema = exports.adminAssignPriestSchema = exports.bulkCreateSlotsSchema = exports.updatePoojaAddonSchema = exports.createPoojaAddonSchema = exports.updatePoojaPackageSchema = exports.createPoojaPackageSchema = exports.updatePoojaSchema = exports.createPoojaSchema = exports.poojaProcessStepSchema = exports.bookingFeedbackSchema = exports.simulatePaymentSchema = exports.cancelBookingSchema = exports.rescheduleBookingSchema = exports.createBookingSchema = exports.submitPoojaReviewSchema = exports.addCheckoutFamilyMemberSchema = exports.generateQuoteSchema = exports.addonSelectionSchema = exports.sankalpDetailSchema = exports.devoteeDetailSchema = void 0;
+exports.adminProcessRefundSchema = exports.adminSetLiveSessionSchema = exports.adminUpdateBookingStatusSchema = exports.adminAssignPriestSchema = exports.bulkCreateSlotsSchema = exports.updatePoojaAddonSchema = exports.createPoojaAddonSchema = exports.updatePoojaPackageSchema = exports.createPoojaPackageSchema = exports.updatePoojaSchema = exports.createPoojaSchema = exports.poojaProcessStepSchema = exports.bookingFeedbackSchema = exports.simulatePaymentSchema = exports.cancelBookingSchema = exports.rescheduleBookingSchema = exports.createBookingSchema = exports.addCheckoutFamilyMemberSchema = exports.generateQuoteSchema = exports.addonSelectionSchema = exports.sankalpDetailSchema = exports.devoteeDetailSchema = void 0;
 const zod_1 = require("zod");
 exports.devoteeDetailSchema = zod_1.z.object({
     name: zod_1.z.string().min(2).max(100),
@@ -43,12 +43,6 @@ exports.addCheckoutFamilyMemberSchema = zod_1.z.object({
     placeOfBirth: zod_1.z.string().max(200).optional(),
     gotra: zod_1.z.string().max(50).optional(),
     rashi: zod_1.z.string().max(50).optional()
-});
-exports.submitPoojaReviewSchema = zod_1.z.object({
-    rating: zod_1.z.number().min(1).max(5),
-    reviewText: zod_1.z.string().min(5).max(1000),
-    reviewerName: zod_1.z.string().min(2).max(150).optional(),
-    reviewerCity: zod_1.z.string().max(100).optional()
 });
 exports.createBookingSchema = zod_1.z.object({
     quoteId: zod_1.z.string().uuid(),
