@@ -8532,6 +8532,885 @@
           }
         }
       }
+    },
+    "/api/v1/wallet": {
+      "get": {
+        "tags": [
+          "Wallet & Payments"
+        ],
+        "summary": "Get customer wallet balance and overview",
+        "description": "Returns the authoritative wallet balance and active mirror state for the authenticated customer.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Wallet balance retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Wallet balance retrieved successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "wallet_id": {
+                          "type": "number",
+                          "example": 1
+                        },
+                        "user_id": {
+                          "type": "number",
+                          "example": 101
+                        },
+                        "balance": {
+                          "type": "number",
+                          "example": 250
+                        },
+                        "currency": {
+                          "type": "string",
+                          "example": "INR"
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "ACTIVE"
+                        },
+                        "user_mirror_balance": {
+                          "type": "number",
+                          "example": 250
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/wallet/balance": {
+      "get": {
+        "tags": [
+          "Wallet & Payments"
+        ],
+        "summary": "Get customer wallet balance (alias)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Wallet balance retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/wallet/transactions": {
+      "get": {
+        "tags": [
+          "Wallet & Payments"
+        ],
+        "summary": "Get wallet transaction ledger history",
+        "description": "Returns paginated ledger transactions for the authenticated user, optionally filtered by transaction type.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CREDIT",
+                "DEBIT",
+                "CHAT_DEBIT",
+                "REFUND"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Wallet transactions retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/wallet/chat-transactions": {
+      "get": {
+        "tags": [
+          "Wallet & Payments"
+        ],
+        "summary": "Get user-wise chat consultation transaction history",
+        "description": "Returns all chat debit and settlement ledger entries for the authenticated user.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat transactions retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/wallet/topup/order": {
+      "post": {
+        "tags": [
+          "Wallet & Payments"
+        ],
+        "summary": "Create Razorpay wallet topup order",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amount"
+                ],
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "minimum": 10,
+                    "example": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Topup order created successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/wallet/topup/verify": {
+      "post": {
+        "tags": [
+          "Wallet & Payments"
+        ],
+        "summary": "Verify Razorpay payment signature & credit wallet atomically",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "razorpay_order_id",
+                  "razorpay_payment_id",
+                  "razorpay_signature",
+                  "amount"
+                ],
+                "properties": {
+                  "razorpay_order_id": {
+                    "type": "string",
+                    "example": "order_NxABC123456789"
+                  },
+                  "razorpay_payment_id": {
+                    "type": "string",
+                    "example": "pay_NyXYZ987654321"
+                  },
+                  "razorpay_signature": {
+                    "type": "string",
+                    "example": "a9b8c7d6e5f4..."
+                  },
+                  "amount": {
+                    "type": "number",
+                    "example": 500
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "example": "pay_NyXYZ987654321"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment verified and wallet credited successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/chat/requests": {
+      "post": {
+        "tags": [
+          "Astrology Chat (Customer)"
+        ],
+        "summary": "Initiate a new chat request to an astrologer",
+        "description": "Checks customer wallet balance for minute 1, verifies astrologer availability, and creates a PENDING session with a 30s timeout window.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "astrologerId"
+                ],
+                "properties": {
+                  "astrologerId": {
+                    "type": "string",
+                    "example": "1"
+                  },
+                  "clientRequestId": {
+                    "type": "string",
+                    "example": "req-uuid-123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Chat request created successfully with 30s timeout"
+          }
+        }
+      }
+    },
+    "/api/v1/chat/requests/{sessionId}": {
+      "get": {
+        "tags": [
+          "Astrology Chat (Customer)"
+        ],
+        "summary": "Get chat request status",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat session details"
+          }
+        }
+      }
+    },
+    "/api/v1/chat/requests/{sessionId}/cancel": {
+      "post": {
+        "tags": [
+          "Astrology Chat (Customer)"
+        ],
+        "summary": "Cancel pending chat request before astrologer responds",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat request cancelled successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/chat/sessions": {
+      "get": {
+        "tags": [
+          "Astrology Chat (Customer)"
+        ],
+        "summary": "List customer chat consultations",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ACTIVE",
+                "COMPLETED",
+                "REJECTED",
+                "EXPIRED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat sessions retrieved"
+          }
+        }
+      }
+    },
+    "/api/v1/chat/sessions/{sessionId}": {
+      "get": {
+        "tags": [
+          "Astrology Chat (Customer)"
+        ],
+        "summary": "Get details of a specific chat session",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat session details"
+          }
+        }
+      }
+    },
+    "/api/v1/chat/sessions/{sessionId}/end": {
+      "post": {
+        "tags": [
+          "Astrology Chat (Customer)"
+        ],
+        "summary": "End active chat consultation",
+        "description": "Finalizes billing, calculates final duration, commission, and releases astrologer status.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "example": "CUSTOMER_ENDED"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat consultation concluded successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/chat/sessions/{sessionId}/messages": {
+      "get": {
+        "tags": [
+          "Astrology Chat (Customer)"
+        ],
+        "summary": "Get chat messages in session",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat messages retrieved"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Astrology Chat (Customer)"
+        ],
+        "summary": "Send text or media message in active chat session",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "messageType": {
+                    "type": "string",
+                    "enum": [
+                      "TEXT",
+                      "IMAGE",
+                      "KUNDLI_PDF"
+                    ],
+                    "default": "TEXT"
+                  },
+                  "messageText": {
+                    "type": "string",
+                    "example": "Namaste Guruji, please guide me on my career."
+                  },
+                  "attachmentId": {
+                    "type": "string",
+                    "example": "att-uuid-123"
+                  },
+                  "clientMessageId": {
+                    "type": "string",
+                    "example": "msg-client-001"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Chat message sent successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/chat/sessions/{sessionId}/attachments/upload-url": {
+      "post": {
+        "tags": [
+          "Astrology Chat (Customer)"
+        ],
+        "summary": "Create presigned attachment upload metadata",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fileName",
+                  "fileSize",
+                  "mimeType"
+                ],
+                "properties": {
+                  "fileName": {
+                    "type": "string",
+                    "example": "kundli.pdf"
+                  },
+                  "fileSize": {
+                    "type": "integer",
+                    "example": 1048576
+                  },
+                  "mimeType": {
+                    "type": "string",
+                    "example": "application/pdf"
+                  },
+                  "fileCategory": {
+                    "type": "string",
+                    "enum": [
+                      "IMAGE",
+                      "DOCUMENT"
+                    ],
+                    "default": "DOCUMENT"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Attachment upload URL generated"
+          }
+        }
+      }
+    },
+    "/api/v1/chat/transactions": {
+      "get": {
+        "tags": [
+          "Astrology Chat (Customer)"
+        ],
+        "summary": "Get user-wise chat consultation billing transactions",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User-wise chat transactions retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/astrologer/chat/requests": {
+      "get": {
+        "tags": [
+          "Astrology Chat (Astrologer)"
+        ],
+        "summary": "Get incoming pending chat consultation requests for authenticated astrologer",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pending consultation requests retrieved"
+          }
+        }
+      }
+    },
+    "/api/v1/astrologer/chat/requests/{sessionId}/accept": {
+      "post": {
+        "tags": [
+          "Astrology Chat (Astrologer)"
+        ],
+        "summary": "Astrologer manually accepts chat request",
+        "description": "Activates the session, marks astrologer busy, deducts minute 1 upfront, and starts real-time per-minute billing.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat request accepted and consultation started"
+          }
+        }
+      }
+    },
+    "/api/v1/astrologer/chat/requests/{sessionId}/reject": {
+      "post": {
+        "tags": [
+          "Astrology Chat (Astrologer)"
+        ],
+        "summary": "Astrologer manually rejects chat request",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "example": "Currently unavailable for consultation"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat request rejected"
+          }
+        }
+      }
+    },
+    "/api/v1/astrologer/chat/sessions": {
+      "get": {
+        "tags": [
+          "Astrology Chat (Astrologer)"
+        ],
+        "summary": "List astrologer chat consultations history",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ACTIVE",
+                "COMPLETED",
+                "REJECTED",
+                "EXPIRED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Astrologer chat consultations retrieved"
+          }
+        }
+      }
+    },
+    "/api/v1/astrologer/chat/sessions/{sessionId}/end": {
+      "post": {
+        "tags": [
+          "Astrology Chat (Astrologer)"
+        ],
+        "summary": "Astrologer concludes chat consultation",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "example": "ASTROLOGER_ENDED"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat consultation concluded successfully"
+          }
+        }
+      }
     }
   },
   "tags": [
@@ -8562,6 +9441,18 @@
     {
       "name": "Admin - Online Pooja & Bookings",
       "description": "Admin pooja catalog, packages, slots generation, and priest assignment"
+    },
+    {
+      "name": "Wallet & Payments",
+      "description": "Customer wallet balance, topup lifecycle, and transaction ledger"
+    },
+    {
+      "name": "Astrology Chat (Customer)",
+      "description": "Customer consultation requests, real-time chat sessions, messaging, and chat billing history"
+    },
+    {
+      "name": "Astrology Chat (Astrologer)",
+      "description": "Astrologer consultation request acceptance, rejection, and active session management"
     }
   ]
 }

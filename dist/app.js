@@ -29,6 +29,9 @@ const pooja_booking_routes_1 = require("./modules/poojas/pooja-booking.routes");
 const admin_pooja_routes_1 = require("./modules/poojas/admin-pooja.routes");
 const admin_pooja_booking_routes_1 = require("./modules/poojas/admin-pooja-booking.routes");
 const review_routes_1 = require("./modules/reviews/review.routes");
+const wallet_routes_1 = require("./modules/wallet/wallet.routes");
+const chat_routes_1 = require("./modules/chat/chat.routes");
+const astrologer_chat_routes_1 = require("./modules/chat/astrologer-chat.routes");
 // Ensure BigInt values serialize cleanly to JSON
 BigInt.prototype.toJSON = function () {
     return Number(this);
@@ -119,6 +122,9 @@ function createApp() {
     app.use('/api/v1/admin/poojas', admin_pooja_routes_1.adminPoojaRoutes);
     app.use('/api/v1/admin/pooja-bookings', admin_pooja_booking_routes_1.adminPoojaBookingRoutes);
     app.use('/api/v1', review_routes_1.reviewRoutes);
+    app.use('/api/v1/wallet', wallet_routes_1.walletRoutes);
+    app.use('/api/v1/chat', chat_routes_1.chatRoutes);
+    app.use('/api/v1/astrologer/chat', astrologer_chat_routes_1.astrologerChatRoutes);
     // Catch-all 404 handler
     app.use((req, res) => {
         res.status(404).json((0, api_response_1.createErrorResponse)(`Endpoint ${req.method} ${req.originalUrl} not found`, [{ code: 'ROUTE_NOT_FOUND', message: 'The requested route does not exist' }], req.traceId));
